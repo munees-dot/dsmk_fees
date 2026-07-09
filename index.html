@@ -156,6 +156,16 @@
   .session-bar span{font-size:.8rem;font-weight:600;color:var(--muted);margin-right:auto;}
   .session-bar button{padding:6px 14px;font-size:.78rem;border-radius:9px;}
 
+  .sync-toast{
+    position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#1c2b27;color:#fff;padding:10px 18px;border-radius:999px;font-size:.82rem;
+    font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;pointer-events:none;
+    transition:opacity .25s, transform .25s;z-index:300;
+  }
+  .sync-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .sync-toast.ok{background:#155c45;}
+  .sync-toast.err{background:#8a3b2e;}
+
   .stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;}
   .stat-card{
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -705,14 +715,14 @@ let selectedLoginRole = 'admin';
 
 function getPass(role){
   if(role === 'admin') return localStorage.getItem(PASS_ADMIN_KEY) || '1341';
-  if(role === 'entryY') return localStorage.getItem(PASS_ENTRYY_KEY) || 'entryY123';
-  if(role === 'entryN') return localStorage.getItem(PASS_ENTRYN_KEY) || 'entryN123';
+  if(role === 'entryY') return localStorage.getItem(PASS_ENTRYY_KEY) || 'dsmk@2026';
+  if(role === 'entryN') return localStorage.getItem(PASS_ENTRYN_KEY) || 'sameer@2026';
   return null;
 }
 function isAdmin(){ return currentRole === 'admin'; }
 function lockedCategory(){
   if(currentRole === 'entryY') return 'Y';
-  if(currentRole === 'entryN') return 'N';
+  // entryN and admin both see All / Y / N — only entryY is restricted
   return null;
 }
 function roleLabel(role){
@@ -1016,6 +1026,7 @@ document.getElementById('gridTbody').addEventListener('click', (e)=>{
     renderGrid();
     render();
     renderHistory();
+    scheduleAutoSync();
     return;
   }
   const waBtn = e.target.closest('button[data-action="grid-wa"]');
@@ -1079,6 +1090,7 @@ document.getElementById('tbody').addEventListener('click', (e) => {
     setPaid(id, mk, !isPaid(id, mk));
     render();
     renderHistory();
+    scheduleAutoSync();
   } else if(action === 'wa'){
     sendWhatsApp(id);
   } else if(action === 'edit'){
@@ -1094,6 +1106,7 @@ document.getElementById('tbody').addEventListener('click', (e) => {
       members = members.filter(x=>x.id!==id);
       saveMembers();
       render();
+      scheduleAutoSync();
     }
   }
 });
@@ -1106,6 +1119,7 @@ document.getElementById('tbody').addEventListener('change', (e) => {
       m.mobile = e.target.value.trim();
       saveMembers();
       render();
+      scheduleAutoSync();
     }
   }
 });
@@ -1255,6 +1269,7 @@ document.getElementById('memberSaveBtn').addEventListener('click', ()=>{
   saveMembers();
   document.getElementById('memberOverlay').classList.remove('show');
   render();
+  scheduleAutoSync();
 });
 
 // Quick Add/Edit Student modal (for Y category members)
@@ -1278,6 +1293,7 @@ document.getElementById('studentSaveBtn').addEventListener('click', ()=>{
   saveMembers();
   document.getElementById('studentOverlay').classList.remove('show');
   render();
+  scheduleAutoSync();
 });
 
 // WhatsApp template modal
@@ -1473,6 +1489,7 @@ document.getElementById('paymentSaveBtn').addEventListener('click', ()=>{
   document.getElementById('paymentOverlay').classList.remove('show');
   render();
   renderHistory();
+  scheduleAutoSync();
 });
 
 // Edit / Delete payment log entries
@@ -1493,6 +1510,7 @@ document.getElementById('historyTbody').addEventListener('click', (e)=>{
       recomputePaidFlag(entry.memberId, entry.mk);
       render();
       renderHistory();
+      scheduleAutoSync();
     }
   }
 });
@@ -1573,6 +1591,7 @@ document.getElementById('editPaymentSaveBtn').addEventListener('click', ()=>{
   document.getElementById('editPaymentOverlay').classList.remove('show');
   render();
   renderHistory();
+  scheduleAutoSync();
 });
 
 // --- Google Sheet Sync ---
@@ -1595,6 +1614,39 @@ function getSheetUrl(){
 }
 function setSheetStatus(text){
   document.getElementById('sheetSyncStatus').textContent = text;
+}
+
+// --- Auto-sync to Google Sheet after every data change ---
+function showSyncToast(text, ok){
+  let toast = document.getElementById('autoSyncToast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'autoSyncToast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = text;
+  toast.className = 'sync-toast ' + (ok ? 'ok' : 'err') + ' show';
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(()=>{ toast.classList.remove('show'); }, 3000);
+}
+function scheduleAutoSync(){
+  const url = getSheetUrl();
+  if(!url) return;
+  // fire right away (no delay) so it isn't cancelled by quickly switching apps/screens on mobile
+  (async ()=>{
+    try{
+      const payload = { members, paymentLog, waTemplate };
+      const res = await fetch(url, { method: 'POST', body: JSON.stringify(payload), keepalive: true });
+      const data = await res.json();
+      if(data && data.status === 'ok'){
+        showSyncToast('☁️ Synced to Google Sheet', true);
+      } else {
+        showSyncToast('⚠️ Sync got an unexpected response', false);
+      }
+    } catch(err){
+      showSyncToast('⚠️ Sync failed — will retry on next change', false);
+    }
+  })();
 }
 
 document.getElementById('printBtn').addEventListener('click', ()=>{
@@ -1743,8 +1795,8 @@ document.getElementById('manageLoginsCancelBtn').addEventListener('click', ()=>{
 });
 document.getElementById('manageLoginsSaveBtn').addEventListener('click', ()=>{
   localStorage.setItem(PASS_ADMIN_KEY, document.getElementById('passAdminInput').value.trim() || '1341');
-  localStorage.setItem(PASS_ENTRYY_KEY, document.getElementById('passEntryYInput').value.trim() || 'entryY123');
-  localStorage.setItem(PASS_ENTRYN_KEY, document.getElementById('passEntryNInput').value.trim() || 'entryN123');
+  localStorage.setItem(PASS_ENTRYY_KEY, document.getElementById('passEntryYInput').value.trim() || 'dsmk@2026');
+  localStorage.setItem(PASS_ENTRYN_KEY, document.getElementById('passEntryNInput').value.trim() || 'sameer@2026');
   document.getElementById('manageLoginsOverlay').classList.remove('show');
   alert('Passcodes updated.');
 });
