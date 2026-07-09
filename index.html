@@ -1,0 +1,1765 @@
+<!DOCTYPE html>
+<html lang="ml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fee Collection Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f6f5;
+    --card:#ffffff;
+    --ink:#1c2b27;
+    --muted:#6b7d78;
+    --line:#e3e9e6;
+    --green:#1f7a5c;
+    --green-dark:#155c45;
+    --green-soft:#e6f4ef;
+    --amber:#b8860b;
+    --amber-soft:#fdf3df;
+    --red:#c0392b;
+    --red-soft:#fbe9e7;
+    --accent:#2f8f6e;
+    --shadow: 0 1px 2px rgba(20,40,35,.06), 0 6px 20px rgba(20,40,35,.06);
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Noto Sans Malayalam','Inter',sans-serif;
+    background:
+      radial-gradient(1200px 600px at 90% -10%, #e9f6ef 0%, transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    padding-bottom:60px;
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:18px 14px 40px;}
+  header.top{
+    display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .title-block h1{
+    font-size:1.35rem;margin:0 0 2px;font-weight:700;letter-spacing:-.01em;
+  }
+  .title-block p{margin:0;color:var(--muted);font-size:.85rem;}
+  .month-nav{
+    display:flex;align-items:center;gap:8px;background:var(--card);
+    border:1px solid var(--line);border-radius:999px;padding:6px 6px 6px 14px;
+    box-shadow:var(--shadow);
+  }
+  .month-nav button{
+    border:none;background:var(--green-soft);color:var(--green-dark);
+    width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:.15s;
+  }
+  .month-nav button:hover{background:var(--accent);color:#fff;}
+  .month-nav span{font-weight:600;min-width:120px;text-align:center;font-size:.92rem;}
+
+  .view-switch{
+    display:flex;gap:6px;background:var(--card);border:1px solid var(--line);
+    padding:5px;border-radius:12px;box-shadow:var(--shadow);width:fit-content;margin-bottom:16px;
+  }
+  .view-switch button{
+    border:none;background:transparent;padding:9px 18px;border-radius:9px;
+    font-family:inherit;font-size:.9rem;font-weight:600;color:var(--muted);cursor:pointer;
+  }
+  .view-switch button.active{background:var(--green-dark);color:#fff;}
+
+  .year-nav{
+    display:flex;align-items:center;gap:8px;background:var(--card);
+    border:1px solid var(--line);border-radius:999px;padding:6px 6px 6px 14px;
+    box-shadow:var(--shadow);
+  }
+  .year-nav button{
+    border:none;background:var(--green-soft);color:var(--green-dark);
+    width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;transition:.15s;
+  }
+  .year-nav button:hover{background:var(--accent);color:#fff;}
+  .year-nav span{font-weight:700;min-width:60px;text-align:center;font-size:.95rem;}
+
+  table.grid-table{font-size:.8rem;}
+  table.grid-table thead th{
+    background:#111820;color:#fff;font-weight:700;text-transform:uppercase;
+    font-size:.68rem;letter-spacing:.03em;text-align:center;padding:10px 8px;
+  }
+  table.grid-table thead th.grid-name{text-align:left;}
+  table.grid-table thead th.grid-sl{text-align:center;width:44px;}
+  table.grid-table tbody td{text-align:center;padding:8px 6px;}
+  table.grid-table tbody td.grid-name-cell{text-align:left;font-weight:600;}
+  table.grid-table tbody tr:nth-child(even){background:#f7f9f8;}
+  .month-cell{
+    cursor:pointer;border-radius:6px;width:30px;height:24px;display:inline-flex;
+    align-items:center;justify-content:center;font-weight:700;font-size:.8rem;
+    transition:.1s;user-select:none;
+  }
+  .month-cell.paid{background:var(--green-soft);color:var(--green-dark);}
+  .month-cell.pending{background:transparent;color:var(--line);border:1px dashed var(--line);}
+  .month-cell:hover{outline:2px solid var(--accent);}
+
+  .add-student-btn{
+    border:1px dashed var(--accent);background:transparent;color:var(--accent);
+    font-size:.7rem;font-weight:600;padding:3px 9px;border-radius:999px;cursor:pointer;
+  }
+  .add-student-btn:hover{background:var(--green-soft);}
+  .student-edit-link{
+    border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:.72rem;
+    padding:0 0 0 4px;
+  }
+  .student-edit-link:hover{color:var(--accent);}
+  .student-row{display:flex;gap:6px;margin-bottom:6px;align-items:center;}
+  .student-row .s-name{flex:2;}
+  .student-row .s-class{flex:1;}
+  .student-row input{
+    padding:8px 10px;border-radius:8px;border:1px solid var(--line);font-family:inherit;font-size:.85rem;
+  }
+  .student-row .s-remove{
+    border:none;background:var(--red-soft);color:var(--red);width:28px;height:28px;border-radius:7px;
+    cursor:pointer;font-size:.8rem;flex-shrink:0;
+  }
+  .student-row .s-remove:hover{background:var(--red);color:#fff;}
+
+  .login-overlay{
+    position:fixed;inset:0;background:linear-gradient(160deg,#0f2b21,#123a2c);
+    display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;
+  }
+  .login-box{
+    background:#fff;border-radius:18px;padding:28px 26px;width:100%;max-width:380px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);
+  }
+  .login-box h2{margin:0 0 4px;font-size:1.2rem;}
+  .role-select{display:flex;flex-direction:column;gap:8px;margin:16px 0;}
+  .role-btn{
+    border:1.5px solid var(--line);background:#fff;padding:10px 14px;border-radius:10px;
+    font-family:inherit;font-size:.88rem;font-weight:600;text-align:left;cursor:pointer;color:var(--ink);
+  }
+  .role-btn.active{border-color:var(--accent);background:var(--green-soft);color:var(--green-dark);}
+
+  .session-bar{
+    display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-bottom:8px;
+  }
+  .session-bar span{font-size:.8rem;font-weight:600;color:var(--muted);margin-right:auto;}
+  .session-bar button{padding:6px 14px;font-size:.78rem;border-radius:9px;}
+
+  .stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px;}
+  .stat-card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    padding:14px 16px;box-shadow:var(--shadow);
+  }
+  .stat-card .num{font-size:1.4rem;font-weight:700;letter-spacing:-.02em;}
+  .stat-card .lbl{color:var(--muted);font-size:.75rem;margin-top:2px;}
+  .stat-card.paid .num{color:var(--green);}
+  .stat-card.pending .num{color:var(--red);}
+  .stat-card.amount .num{color:var(--amber);}
+
+  .toolbar{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;
+  }
+  .tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);
+    padding:5px;border-radius:12px;box-shadow:var(--shadow);}
+  .tabs button{
+    border:none;background:transparent;padding:8px 16px;border-radius:9px;
+    font-family:inherit;font-size:.88rem;font-weight:600;color:var(--muted);cursor:pointer;
+  }
+  .tabs button.active{background:var(--accent);color:#fff;}
+  .search{
+    flex:1;min-width:180px;position:relative;
+  }
+  .search input{
+    width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--line);
+    background:var(--card);font-family:inherit;font-size:.9rem;box-shadow:var(--shadow);
+  }
+  .filter-select{
+    padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+    background:var(--card);font-family:inherit;font-size:.85rem;box-shadow:var(--shadow);color:var(--ink);
+  }
+  .btn{
+    border:none;border-radius:12px;padding:10px 16px;font-family:inherit;font-weight:600;
+    font-size:.85rem;cursor:pointer;transition:.15s;
+  }
+  .btn-primary{background:var(--accent);color:#fff;box-shadow:var(--shadow);}
+  .btn-primary:hover{background:var(--green-dark);}
+  .btn-ghost{background:var(--card);border:1px solid var(--line);color:var(--ink);}
+  .btn-ghost:hover{border-color:var(--accent);color:var(--accent);}
+
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;
+  }
+  table{width:100%;border-collapse:collapse;font-size:.86rem;}
+  thead th{
+    text-align:left;padding:11px 12px;background:#eef4f1;color:var(--muted);
+    font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;
+    position:sticky;top:0;
+  }
+  tbody td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:middle;}
+  tbody tr:hover{background:#f9fbfa;}
+  .name-cell{font-weight:500;}
+  .idx{color:var(--muted);font-size:.78rem;}
+  .badge{
+    display:inline-block;padding:3px 10px;border-radius:999px;font-size:.72rem;font-weight:700;
+  }
+  .badge.Y{background:#e7edfb;color:#2c4ea3;}
+  .badge.N{background:#f3ecfb;color:#6b3fa0;}
+  .badge.unset{background:#f1f1f1;color:#888;}
+  .fee{font-weight:600;color:var(--ink);}
+  .mobile-cell{display:flex;align-items:center;gap:6px;}
+  .mobile-cell input{
+    border:1px solid var(--line);border-radius:8px;padding:6px 8px;font-family:inherit;
+    font-size:.82rem;width:120px;
+  }
+  .status-btn{
+    border:none;border-radius:999px;padding:6px 14px;font-weight:700;font-size:.76rem;cursor:pointer;
+    min-width:84px;
+  }
+  .status-btn.paid{background:var(--green-soft);color:var(--green-dark);}
+  .status-btn.pending{background:var(--red-soft);color:var(--red);}
+  .wa-btn{
+    border:none;background:#dcf4e3;color:#0F7A3D;width:34px;height:34px;border-radius:9px;
+    cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;
+  }
+  .wa-btn svg{width:19px;height:19px;fill:#0F7A3D;}
+  .wa-btn:disabled{opacity:.35;cursor:not-allowed;}
+  .wa-btn:hover:not(:disabled){background:#0F7A3D;}
+  .wa-btn:hover:not(:disabled) svg{fill:#fff;}
+  .row-actions{display:flex;gap:6px;}
+  .icon-btn{
+    border:none;background:#f1f1f1;color:var(--muted);width:30px;height:30px;border-radius:8px;
+    cursor:pointer;font-size:.85rem;
+  }
+  .icon-btn:hover{background:var(--line);color:var(--ink);}
+
+  .table-scroll{overflow-x:auto;}
+  .empty-state{padding:40px;text-align:center;color:var(--muted);}
+
+  /* modal */
+  .overlay{
+    position:fixed;inset:0;background:rgba(20,30,27,.45);display:none;
+    align-items:center;justify-content:center;z-index:50;padding:16px;
+  }
+  .overlay.show{display:flex;}
+  .modal{
+    background:#fff;border-radius:16px;padding:22px;width:100%;max-width:420px;
+    box-shadow:0 20px 60px rgba(0,0,0,.25);
+  }
+  .modal h3{margin:0 0 14px;font-size:1.05rem;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:.78rem;color:var(--muted);margin-bottom:5px;font-weight:600;}
+  .field input, .field select, .field textarea{
+    width:100%;padding:9px 11px;border-radius:9px;border:1px solid var(--line);
+    font-family:inherit;font-size:.9rem;
+  }
+  .field textarea{min-height:90px;resize:vertical;}
+  .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;}
+
+  .footer-note{margin-top:18px;color:var(--muted);font-size:.78rem;text-align:center;}
+
+  @media (max-width:680px){
+    .stat-row{grid-template-columns:repeat(3,1fr);}
+    .month-nav span{min-width:90px;}
+    .mobile-cell input{width:100px;}
+    .view-switch{flex-wrap:wrap;}
+    .view-switch #printBtn, .view-switch #sheetSyncBtnTop{margin-left:0;}
+    .session-bar{flex-wrap:wrap;}
+    .toolbar{gap:8px;}
+    .toolbar .search{flex-basis:100%;}
+    .toolbar .filter-select{flex:1;min-width:120px;}
+    .btn{padding:9px 13px;font-size:.82rem;}
+    .wa-btn, .icon-btn{width:36px;height:36px;}
+    .month-cell{width:34px;height:28px;}
+    table{font-size:.78rem;}
+    thead th{padding:8px 6px;font-size:.66rem;}
+    tbody td{padding:8px 6px;}
+    .login-box{padding:22px 18px;}
+    .role-btn{padding:12px 14px;font-size:.85rem;}
+  }
+
+  @media print{
+    .no-print,
+    .login-overlay, .session-bar, .view-switch, .toolbar, .footer-note,
+    .row-actions, .wa-btn, .icon-btn, .add-student-btn, .student-edit-link,
+    #prevMonth, #nextMonth, #prevYear, #nextYear { display:none !important; }
+    body{ background:#fff; }
+    .card{ box-shadow:none; border:1px solid #999; }
+    .status-btn{
+      border:none !important; background:none !important; padding:0 !important;
+      color:#000 !important; font-weight:700; min-width:0;
+    }
+    .mobile-cell input{ border:none !important; background:transparent !important; padding:0 !important; }
+    .month-cell{ border:none !important; }
+    table.grid-table thead th{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .badge{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Login Overlay -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>🔒 Fee Collection Tracker</h2>
+    <p style="color:var(--muted);font-size:.88rem;margin-top:-8px;">Select your login type</p>
+    <div class="role-select" id="roleSelect">
+      <button data-role="admin" class="role-btn active">👤 Admin</button>
+      <button data-role="entryY" class="role-btn">📗 Entry – Y Category</button>
+      <button data-role="entryN" class="role-btn">📘 Entry – N Category</button>
+    </div>
+    <div class="field">
+      <label>Passcode</label>
+      <input type="password" id="loginPasscode" inputmode="numeric" placeholder="Enter passcode">
+    </div>
+    <div id="loginError" style="color:var(--red);font-size:.82rem;min-height:18px;"></div>
+    <button class="btn btn-primary" id="loginSubmitBtn" style="width:100%;">Login</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="session-bar">
+    <span id="sessionRoleLabel"></span>
+    <button class="btn btn-ghost" id="manageLoginsBtn" style="display:none;">🔑 Manage Logins</button>
+    <button class="btn btn-ghost" id="logoutBtn">Logout</button>
+  </div>
+  <header class="top">
+    <div class="title-block">
+      <h1>Fee Collection Tracker</h1>
+      <p>Track monthly fee collection · N = ₹100 · Y = ₹200</p>
+    </div>
+    <div class="month-nav">
+      <button id="prevMonth">‹</button>
+      <span id="monthLabel"></span>
+      <button id="nextMonth">›</button>
+    </div>
+  </header>
+
+  <div class="view-switch" id="viewSwitch">
+    <button class="btn btn-primary" id="addPaymentBtnTop" style="border-radius:9px;">+ Add Payment</button>
+    <button data-view="members" class="active">👥 Members</button>
+    <button data-view="grid">📅 Yearly Grid</button>
+    <button data-view="history">🧾 Payment History</button>
+    <button class="btn btn-ghost no-print" id="printBtn" style="border-radius:9px;margin-left:auto;">🖨️ Print</button>
+    <button class="btn btn-ghost no-print" id="sheetSyncBtnTop" style="border-radius:9px;">☁️ Google Sheet</button>
+  </div>
+
+  <div id="membersView">
+  <div class="stat-row">
+    <div class="stat-card"><div class="num" id="statTotal">0</div><div class="lbl">Total Members</div></div>
+    <div class="stat-card" style="border-color:#2c4ea3;"><div class="num" id="statCatY" style="color:#2c4ea3;">0</div><div class="lbl">Y Category</div></div>
+    <div class="stat-card" style="border-color:#6b3fa0;"><div class="num" id="statCatN" style="color:#6b3fa0;">0</div><div class="lbl">N Category</div></div>
+    <div class="stat-card paid"><div class="num" id="statPaid">0</div><div class="lbl">Paid</div></div>
+    <div class="stat-card pending"><div class="num" id="statPending">0</div><div class="lbl">Pending</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="tabs" id="tabs">
+      <button data-tab="all" class="active">All</button>
+      <button data-tab="Y">Y (₹200)</button>
+      <button data-tab="N">N (₹100)</button>
+    </div>
+    <div class="search">
+      <input id="searchBox" type="text" placeholder="Search by name or SL number...">
+    </div>
+    <select id="statusFilter" class="filter-select">
+      <option value="all">All Status</option>
+      <option value="paid">Paid Only</option>
+      <option value="pending">Pending Only</option>
+    </select>
+    <button class="btn btn-ghost" id="waTemplateBtn">💬 Message Template</button>
+    <button class="btn btn-ghost" id="markAllPaidBtn">✓ Mark Month Complete</button>
+    <button class="btn btn-primary" id="addMemberBtn">+ Add Member</button>
+  </div>
+
+  <div class="card">
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>SL No.</th>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Fee</th>
+            <th>Mobile</th>
+            <th>Status</th>
+            <th>WhatsApp</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty-state" id="emptyState" style="display:none;">No members found</div>
+    </div>
+  </div>
+  </div><!-- /membersView -->
+
+  <div id="gridView" style="display:none;">
+    <div class="toolbar">
+      <div class="year-nav">
+        <button id="prevYear">‹</button>
+        <span id="yearLabel"></span>
+        <button id="nextYear">›</button>
+      </div>
+      <div class="tabs" id="gridTabs">
+        <button data-tab="all" class="active">All</button>
+        <button data-tab="Y">Y (₹200)</button>
+        <button data-tab="N">N (₹100)</button>
+      </div>
+      <div class="search">
+        <input id="gridSearchBox" type="text" placeholder="Search by name or SL number...">
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-scroll">
+        <table class="grid-table">
+          <thead>
+            <tr>
+              <th class="grid-sl">SL</th>
+              <th class="grid-name">Name</th>
+              <th>Category</th>
+              <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
+              <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+              <th>WhatsApp</th>
+            </tr>
+          </thead>
+          <tbody id="gridTbody"></tbody>
+        </table>
+        <div class="empty-state" id="gridEmptyState" style="display:none;">No members found</div>
+      </div>
+    </div>
+    <p class="footer-note" style="text-align:left;margin-top:10px;">Click any month cell to mark it Paid / Pending for that member.</p>
+  </div><!-- /gridView -->
+
+  <div id="historyView" style="display:none;">
+    <div class="toolbar">
+      <div class="search">
+        <input id="historySearchBox" type="text" placeholder="Search by name or SL number...">
+      </div>
+      <select id="historyMonthFilter" class="filter-select">
+        <option value="all">All Months</option>
+      </select>
+      <button class="btn btn-primary" id="addPaymentBtn">+ Add Payment</button>
+    </div>
+    <div class="card">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Date &amp; Time</th>
+              <th>SL No.</th>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Receipt No.</th>
+              <th>Month</th>
+              <th>Amount</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="historyTbody"></tbody>
+        </table>
+        <div class="empty-state" id="historyEmptyState" style="display:none;">No payments recorded yet</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer-note">Data is saved in this browser on this device (localStorage). It will stay as long as you use the same browser.</p>
+</div>
+
+<!-- Add / Edit Member Modal -->
+<div class="overlay" id="memberOverlay">
+  <div class="modal">
+    <h3 id="memberModalTitle">Add New Member</h3>
+    <div class="field">
+      <label>Name</label>
+      <input type="text" id="mName" placeholder="Enter name">
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <select id="mCat">
+        <option value="N">N — ₹100</option>
+        <option value="Y">Y — ₹200</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Mobile Number</label>
+      <input type="text" id="mMobile" placeholder="10-digit number">
+    </div>
+    <div id="studentFieldsWrap" style="display:none;">
+      <div class="field">
+        <label>Students (Madrassa)</label>
+        <div id="mStudentRows"></div>
+        <button type="button" class="btn btn-ghost" id="mAddStudentRowBtn" style="margin-top:2px;">+ Add another student</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="memberCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="memberSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Add/Edit Student Modal -->
+<div class="overlay" id="studentOverlay">
+  <div class="modal">
+    <h3 id="studentModalTitle">Add Student</h3>
+    <div id="studentModalMemberName" style="font-size:.85rem;color:var(--muted);margin:-8px 0 12px;"></div>
+    <div class="field">
+      <label>Students</label>
+      <div id="sStudentRows"></div>
+      <button type="button" class="btn btn-ghost" id="sAddStudentRowBtn" style="margin-top:2px;">+ Add another student</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="studentCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="studentSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Logins Modal -->
+<div class="overlay" id="manageLoginsOverlay">
+  <div class="modal">
+    <h3>🔑 Manage Login Passcodes</h3>
+    <div class="field">
+      <label>Admin Passcode</label>
+      <input type="text" id="passAdminInput">
+    </div>
+    <div class="field">
+      <label>Entry – Y Category Passcode</label>
+      <input type="text" id="passEntryYInput">
+    </div>
+    <div class="field">
+      <label>Entry – N Category Passcode</label>
+      <input type="text" id="passEntryNInput">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="manageLoginsCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="manageLoginsSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Google Sheet Sync Modal -->
+<div class="overlay" id="sheetSyncOverlay">
+  <div class="modal" style="max-width:480px;">
+    <h3>☁️ Google Sheet Sync</h3>
+    <div class="field">
+      <label>Apps Script Web App URL</label>
+      <input type="text" id="sheetUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+    </div>
+    <div class="modal-actions" style="justify-content:flex-start;flex-wrap:wrap;">
+      <button class="btn btn-ghost" id="sheetSaveUrlBtn">Save URL</button>
+      <button class="btn btn-primary" id="sheetBackupBtn">⬆ Backup to Sheet</button>
+      <button class="btn btn-primary" id="sheetRestoreBtn">⬇ Restore from Sheet</button>
+    </div>
+    <div id="sheetSyncStatus" style="margin-top:12px;font-size:.82rem;color:var(--muted);white-space:pre-line;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="sheetSyncCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- WhatsApp Template Modal -->
+<div class="overlay" id="waOverlay">
+  <div class="modal">
+    <h3>WhatsApp Message Template</h3>
+    <div class="field">
+      <label>Message (you can use: {name} {amount} {month} {student} {class})</label>
+      <textarea id="waTemplateText"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="waCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="waSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Payment Modal -->
+<div class="overlay" id="paymentOverlay">
+  <div class="modal">
+    <h3>Add Payment</h3>
+    <div class="field">
+      <label>SL Number</label>
+      <input type="number" inputmode="numeric" pattern="[0-9]*" id="pSlNo" placeholder="Enter member SL number">
+      <div id="pMemberPreview" style="margin-top:6px;font-size:.82rem;color:var(--muted);"></div>
+    </div>
+    <div class="field">
+      <label>Receipt Number</label>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="pReceipt" placeholder="Enter receipt number">
+    </div>
+    <div class="field">
+      <label>Amount (₹)</label>
+      <input type="number" inputmode="decimal" id="pAmount" placeholder="Amount">
+    </div>
+    <div class="field">
+      <label>Month (starting month — auto-set to next unpaid month)</label>
+      <select id="pMonth"></select>
+      <div id="pMonthsPreview" style="margin-top:6px;font-size:.82rem;color:var(--muted);"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="paymentCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="paymentSaveBtn">Save Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Payment Modal -->
+<div class="overlay" id="editPaymentOverlay">
+  <div class="modal">
+    <h3>Edit Payment</h3>
+    <div class="field">
+      <label>SL Number</label>
+      <input type="number" inputmode="numeric" pattern="[0-9]*" id="epSlNo" placeholder="Member SL number">
+      <div id="epMemberPreview" style="margin-top:6px;font-size:.82rem;color:var(--muted);"></div>
+    </div>
+    <div class="field">
+      <label>Receipt Number</label>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="epReceipt" placeholder="Receipt number">
+    </div>
+    <div class="field">
+      <label>Amount (₹)</label>
+      <input type="number" inputmode="decimal" id="epAmount" placeholder="Amount">
+    </div>
+    <div class="field">
+      <label>Month</label>
+      <select id="epMonth"></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="editPaymentCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="editPaymentSaveBtn">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SEED_MEMBERS = [{"id": 1, "name": "MP അബ്ദുൽ അസീസ്", "cat": "N", "mobile": ""}, {"id": 2, "name": "TK     ബീരാൻ ഹാജി", "cat": "N", "mobile": ""}, {"id": 3, "name": "അല്ലിപ്പറ കബീർ", "cat": "Y", "mobile": ""}, {"id": 4, "name": "TK അയ്യൂബ്", "cat": "Y", "mobile": ""}, {"id": 5, "name": "അമ്പലഞ്ചീരി മുഹമ്മദ് (ചെറിയാപ്പു ഹാജി)", "cat": "Y", "mobile": ""}, {"id": 6, "name": "അല്ലിപ്പറ ഇബ്രാഹീം", "cat": "Y", "mobile": ""}, {"id": 7, "name": "ചെമ്പാൻ മുഹമ്മദ് ( S/o കുഞ്ഞിക്കമ്മു മസ്സിയാർ)", "cat": "N", "mobile": ""}, {"id": 8, "name": "CP അനീസ് (തൊട്ടിപറമ്പിൽ)", "cat": "Y", "mobile": ""}, {"id": 9, "name": "തച്ചിനപറമ്പൻ അബ്ദുൽ ഹമീദ്", "cat": "Y", "mobile": ""}, {"id": 10, "name": "CP ആബിദീൻ  (തൊട്ടിപറമ്പിൽ)", "cat": "Y", "mobile": ""}, {"id": 11, "name": "CP റാഫി  (തൊട്ടിപറമ്പിൽ)", "cat": "Y", "mobile": ""}, {"id": 12, "name": "പാലപ്പെട്ടി അസീസ്", "cat": "N", "mobile": ""}, {"id": 13, "name": "പാലപ്പെട്ടി റസാഖ്", "cat": "Y", "mobile": ""}, {"id": 14, "name": "പാലപ്പെട്ടി ബീരാൻകുട്ടി", "cat": "N", "mobile": ""}, {"id": 15, "name": "പാലപ്പെട്ടി അബൂബക്കർ", "cat": "Y", "mobile": ""}, {"id": 16, "name": "വരമ്പനാലുങ്ങൽ പാത്തുമ്മു PK", "cat": "Y", "mobile": ""}, {"id": 17, "name": "വരമ്പനാലുങ്ങൽ സാദിഖ്", "cat": "Y", "mobile": ""}, {"id": 18, "name": "CP ഊച്ചിപ്പ", "cat": "Y", "mobile": ""}, {"id": 19, "name": "CP മുഹമ്മദ്", "cat": "N", "mobile": ""}, {"id": 20, "name": "CP കുഞ്ഞറമുട്ടി", "cat": "N", "mobile": ""}, {"id": 21, "name": "പാലപ്പെട്ടി മൊയ്തീൻ കുട്ടി (ബാപ്പു)", "cat": "Y", "mobile": ""}, {"id": 22, "name": "പാലപ്പെട്ടി സൈതലവി (S/o ഉണ്ണീൻ)", "cat": "N", "mobile": ""}, {"id": 23, "name": "പാലപ്പെട്ടി മൊയ്തീൻ കുട്ടി (S/o ഉണ്ണീൻ)", "cat": "N", "mobile": ""}, {"id": 24, "name": "CP മുഹമ്മദ് ബാവു", "cat": "N", "mobile": ""}, {"id": 25, "name": "CP ജൂറൈജ് പൂലാട്ട്", "cat": "Y", "mobile": ""}, {"id": 26, "name": "CP ജാബിർ", "cat": "Y", "mobile": ""}, {"id": 27, "name": "ആലുങ്ങൽ ശിഹാബ്", "cat": "Y", "mobile": ""}, {"id": 28, "name": "പാവുതൊടിക മുഹമ്മദ് കുട്ടി (S/o മൂസ്സ ഹാജി)", "cat": "Y", "mobile": ""}, {"id": 29, "name": "പാലപ്പെട്ടി മായീൻ", "cat": "N", "mobile": ""}, {"id": 30, "name": "പാലപ്പെട്ടി സാഹുൽ ഹമീദ് (സാവുട്ടി)", "cat": "Y", "mobile": ""}, {"id": 31, "name": "പാലപ്പെട്ടി ശറഫൂദ്ധീൻ (S/O മുത്തു Late)", "cat": "", "mobile": ""}, {"id": 32, "name": "പാലപ്പെട്ടി അജ്നാസ് (s/o മുഹമ്മദ്)", "cat": "N", "mobile": ""}, {"id": 33, "name": "പാലപ്പെട്ടി കോമു", "cat": "N", "mobile": ""}, {"id": 34, "name": "പാലപ്പെട്ടി മുജീബ് (മാനു)", "cat": "Y", "mobile": ""}, {"id": 35, "name": "അമ്പലഞ്ചീരി കോയ (S/o കരിപ്പൂർ മൊയ്തീൻകുട്ടി)", "cat": "Y", "mobile": ""}, {"id": 36, "name": "ആലുങ്ങൽ നിസാർ", "cat": "N", "mobile": ""}, {"id": 37, "name": "പാവുതൊടിക മുഹമ്മദ് കുട്ടി (സൈതാലി)", "cat": "Y", "mobile": ""}, {"id": 38, "name": "പാവുതൊടിക ഫൈസൽ", "cat": "Y", "mobile": ""}, {"id": 39, "name": "K. T. മുനീർ", "cat": "Y", "mobile": ""}, {"id": 40, "name": "പാവുതൊടിക മൊയ്തീൻ", "cat": "Y", "mobile": ""}, {"id": 41, "name": "തുപ്പിലിക്കാടൻ മുഹസിൻ", "cat": "N", "mobile": ""}, {"id": 42, "name": "പാവുതൊടിക ബിരാൻ", "cat": "Y", "mobile": ""}, {"id": 43, "name": "അലിപ്പറ മൂക്കോളിൻ മൈമൂന", "cat": "N", "mobile": ""}, {"id": 44, "name": "അലിപ്പറ മൂക്കോളിൻ മൂസ S/o മമ്മദ്", "cat": "Y", "mobile": ""}, {"id": 45, "name": "അലിപ്പറ മൂക്കോളിൻ ഇബ്രാഹിം", "cat": "Y", "mobile": ""}, {"id": 46, "name": "അലിപ്പറ മൂക്കോളിൻ ആസ്യ", "cat": "N", "mobile": ""}, {"id": 47, "name": "അലിപ്പറ മൂക്കോളിൻ അബൂബക്കർ", "cat": "Y", "mobile": ""}, {"id": 48, "name": "അമ്പലഞ്ചീരി കരിപ്പൂർ മൊയ്തീൻ കുട്ടി", "cat": "Y", "mobile": ""}, {"id": 49, "name": "അമ്പലഞ്ചീരി മമ്മദ് (ബിച്ചാപ്പു)", "cat": "Y", "mobile": ""}, {"id": 50, "name": "മൂപ്പത്തായത്ത് അബ്ദുൽ ഗഫൂർ", "cat": "Y", "mobile": ""}, {"id": 51, "name": "ചത്തംപിലാക്കൽ A. റഷീദ്", "cat": "Y", "mobile": ""}, {"id": 52, "name": "ചത്തംപിലാക്കൽ A. അബ്ദുറഹിമാൻ", "cat": "N", "mobile": ""}, {"id": 53, "name": "ചത്തംപിലാക്കൽ A. സുബൈർ കുഞ്ഞാവ", "cat": "Y", "mobile": ""}, {"id": 54, "name": "പാവുതൊടിക പുലാട്ട് മൂസ", "cat": "N", "mobile": ""}, {"id": 55, "name": "അലിപ്പറ ഇസ്മായിൽ", "cat": "Y", "mobile": ""}, {"id": 56, "name": "പാലപ്പെട്ടി മുഹമ്മദ് കുട്ടി ബിച്ചാവ", "cat": "Y", "mobile": ""}, {"id": 57, "name": "കീടക്കാടൻ അബ്ദുറഹിമാൻ മുസ്ല്യാർ", "cat": "N", "mobile": ""}, {"id": 58, "name": "അലിപ്പറ നുഞാറ്റിൽ അസീസ്", "cat": "N", "mobile": ""}, {"id": 59, "name": "മൂക്കോളി മുഹമ്മദലി", "cat": "Y", "mobile": ""}, {"id": 60, "name": "മൂക്കോളി റിയാസ് S/o മുഹമ്മദലി", "cat": "Y", "mobile": ""}, {"id": 61, "name": "മൂക്കോളി നിസാർ S/o മുഹമ്മദലി", "cat": "Y", "mobile": ""}, {"id": 62, "name": "മൂക്കോളി അബ്ദുൽ ഹമീദ്", "cat": "N", "mobile": ""}, {"id": 63, "name": "മൂക്കോളി ഹനീഫ S/o ഹമീദ്", "cat": "Y", "mobile": ""}, {"id": 64, "name": "മൂക്കോളി അഷ്റഫ് S/o ഹമീദ്", "cat": "Y", "mobile": ""}, {"id": 65, "name": "അലിപ്പറ നുഞ്ഞാറ്റിൽ മുസ്തഫ", "cat": "N", "mobile": ""}, {"id": 66, "name": "കൊടപ്പനോടൻ ജാഫർ", "cat": "N", "mobile": ""}, {"id": 67, "name": "അലിപ്പറ ശരീഫ്", "cat": "Y", "mobile": ""}, {"id": 68, "name": "അലിപ്പറ നൂഞ്ഞാറ്റിൽ ഖാദർ", "cat": "N", "mobile": ""}, {"id": 69, "name": "അലിപ്പറ നൂഞ്ഞാറ്റിൽ റിയാസ്", "cat": "N", "mobile": ""}, {"id": 70, "name": "റഹ് മത്ത് ചാരുപടിക്കൽ (ഫായിസ്)", "cat": "N", "mobile": ""}, {"id": 71, "name": "നൂഞ്ഞാറ്റിൽ ഷാജി", "cat": "N", "mobile": ""}, {"id": 72, "name": "അലിപ്പറ ഉമർ", "cat": "N", "mobile": ""}, {"id": 73, "name": "അലിപ്പറ മോയിൻ", "cat": "Y", "mobile": ""}, {"id": 74, "name": "അലിപ്പറ ഖാദർ", "cat": "Y", "mobile": ""}, {"id": 75, "name": "അലിപ്പറ ബിച്ചൂട്ടി", "cat": "Y", "mobile": ""}, {"id": 76, "name": "അലിപ്പറ അൻസാർ", "cat": "Y", "mobile": ""}, {"id": 77, "name": "മൂക്കോളി അഫ്സൽ", "cat": "Y", "mobile": ""}, {"id": 78, "name": "അലിപ്പറ താന്നിക്കാട്ട് റഫീഖ്", "cat": "N", "mobile": ""}, {"id": 79, "name": "അലിപ്പറ താന്നിക്കാട്ട് നാസർ", "cat": "Y", "mobile": ""}, {"id": 80, "name": "അലിപ്പറ താന്നിക്കാട്ട് മുജീബ്", "cat": "N", "mobile": ""}, {"id": 81, "name": "അലിപ്പറ താന്നിക്കാട്ട് അൻസാർ", "cat": "Y", "mobile": ""}, {"id": 82, "name": "കോഴിക്കോടൻ ജംഷീർ മൂസ", "cat": "Y", "mobile": ""}, {"id": 83, "name": "കോഴിക്കോടൻ ഷാഫി", "cat": "Y", "mobile": ""}, {"id": 84, "name": "പൂളക്കൽ അഷ്റഫ്", "cat": "Y", "mobile": ""}, {"id": 85, "name": "A.K അഷ്റഫ് സഫിയ ടീച്ചർ", "cat": "N", "mobile": ""}, {"id": 86, "name": "കാരക്കാടൻ സാഹുൽ ഹമീദ്", "cat": "N", "mobile": ""}, {"id": 87, "name": "M.K. മമ്മുണ്ണി", "cat": "N", "mobile": ""}, {"id": 88, "name": "ചെമ്പാൻ ഷാഫി", "cat": "N", "mobile": ""}, {"id": 89, "name": "കാരക്കാടൻ സാബിറ", "cat": "Y", "mobile": ""}, {"id": 90, "name": "കോഴിക്കോടൻ മൊയ്തീൻ കുട്ടി", "cat": "Y", "mobile": ""}, {"id": 91, "name": "കോഴിക്കോടൻ റിയാസ്", "cat": "Y", "mobile": ""}, {"id": 92, "name": "അലിപ്പറ മുസ്ഥഫ S/o മൊയ്തീൻ കോയ", "cat": "N", "mobile": ""}, {"id": 93, "name": "അലിപ്പറ നുഞ്ഞാറ്റിൽ മൊയ്തീൻ കോയ", "cat": "N", "mobile": ""}, {"id": 94, "name": "കാരക്കാടൻ മുഹമ്മദലി", "cat": "N", "mobile": ""}, {"id": 95, "name": "അമ്പലഞ്ചീരി നൗഷാദ്", "cat": "Y", "mobile": ""}, {"id": 96, "name": "അമ്പലഞ്ചീരി മൊയ്തീൻ കുട്ടി", "cat": "N", "mobile": ""}, {"id": 97, "name": "പൂക്കോടൻ അബ്ദുൽ റഷീദ്", "cat": "N", "mobile": ""}, {"id": 98, "name": "കൊഴിക്കൽ മജീദ്", "cat": "Y", "mobile": ""}, {"id": 99, "name": "പാവുതൊടിക ബഷീർ", "cat": "Y", "mobile": ""}, {"id": 100, "name": "പാലപ്പെട്ടി ഷിഹാബ്", "cat": "Y", "mobile": ""}, {"id": 101, "name": "കുന്നത്ത് ബിരാൻ കുട്ടി", "cat": "N", "mobile": ""}, {"id": 102, "name": "പാവുതൊടിക ബരാൻ കുട്ടി", "cat": "N", "mobile": ""}, {"id": 103, "name": "ആലുങ്ങൽ റിയാസ്", "cat": "Y", "mobile": ""}, {"id": 104, "name": "P.T. സിദ്ധിഖ് പട്ടായിൽ", "cat": "N", "mobile": ""}, {"id": 105, "name": "P.T. മുസ്തഫ പട്ടായിൽ", "cat": "Y", "mobile": ""}, {"id": 106, "name": "ഇബ്രാഹിം", "cat": "N", "mobile": ""}, {"id": 107, "name": "A.V. സൈനുദ്ദീൻ", "cat": "Y", "mobile": ""}, {"id": 108, "name": "A.V. സിറാജ്", "cat": "Y", "mobile": ""}, {"id": 109, "name": "ചെമ്പാൻ കൊച്ചു", "cat": "N", "mobile": ""}, {"id": 110, "name": "TK അബ്ദുൽ കരീം", "cat": "N", "mobile": ""}, {"id": 111, "name": "TK അബ്ദുൽ ഹമീദ്", "cat": "N", "mobile": ""}, {"id": 112, "name": "തൊണ്ടിക്കോടൻ മൊയ്തീൻ", "cat": "N", "mobile": ""}, {"id": 113, "name": "A.V. അബ്ദുൽ കരീം", "cat": "Y", "mobile": ""}, {"id": 114, "name": "കോഴിക്കോടൻ ആലിബാവ", "cat": "N", "mobile": ""}, {"id": 115, "name": "കോഴിക്കോടൻ മുഹമ്മദ്", "cat": "N", "mobile": ""}, {"id": 116, "name": "കോഴിക്കോടൻ സൽമാൻ", "cat": "Y", "mobile": ""}, {"id": 117, "name": "കോഴിക്കോടൻ ആലി", "cat": "N", "mobile": ""}, {"id": 118, "name": "കോഴിക്കോടൻ ബീരാൻ", "cat": "Y", "mobile": ""}, {"id": 119, "name": "കോഴിക്കോടൻ അഹമ്മദ്", "cat": "Y", "mobile": ""}, {"id": 120, "name": "കോഴിക്കോടൻ അസീസ്", "cat": "Y", "mobile": ""}, {"id": 121, "name": "കാളങ്ങാടൻ ചെറിയാപ്പു (മുഹമ്മദ്", "cat": "N", "mobile": ""}, {"id": 122, "name": "ചെമ്പാൻ അബ്ദുൽ ഹമീദ്", "cat": "Y", "mobile": ""}, {"id": 123, "name": "പുറ്റേക്കാടൻ ഇഫ്തിഖാർ മാലിക്", "cat": "Y", "mobile": ""}, {"id": 124, "name": "പുറ്റേക്കാടൻ  അലി അക്ബർ", "cat": "N", "mobile": ""}, {"id": 125, "name": "TK അബ്ദുറസാഖ്", "cat": "N", "mobile": ""}, {"id": 126, "name": "TK അഫ്സൽ", "cat": "N", "mobile": ""}, {"id": 127, "name": "പാവുതൊടിക                S/o മുസ്തഫ", "cat": "N", "mobile": ""}, {"id": 128, "name": "പാവുതൊടിക അബ്ദുൽ ഗഫൂർ", "cat": "Y", "mobile": ""}, {"id": 129, "name": "ഇപ്പിലിങ്ങോടൻ ശംസു", "cat": "Y", "mobile": ""}, {"id": 130, "name": "S.V. യാക്കൂബ്", "cat": "N", "mobile": ""}, {"id": 131, "name": "പാവുതൊടിക സൈതലവി", "cat": "N", "mobile": ""}, {"id": 132, "name": "പാവുതൊടിക കുഞ്ഞാണി", "cat": "N", "mobile": ""}, {"id": 133, "name": "പാവുതൊടിക സുബൈർ (ബിച്ചാപ്പു)", "cat": "Y", "mobile": ""}, {"id": 134, "name": "പാവുതൊടിക ബീരാൻ കുട്ടി (ബാവാ)", "cat": "Y", "mobile": ""}, {"id": 135, "name": "അബ്ദുൽ സാലിഹ് തങ്ങൾ", "cat": "N", "mobile": ""}, {"id": 136, "name": "ഖാസിം കോയ തങ്ങൾ", "cat": "N", "mobile": ""}, {"id": 137, "name": "പുറ്റേക്കാടൻ മഹ്മൂദ്", "cat": "N", "mobile": ""}, {"id": 138, "name": "പുറ്റേക്കാടൻ ഉബൈദ് (കുഞ്ഞാപ്പു)", "cat": "N", "mobile": ""}, {"id": 139, "name": "ചെമ്പാൻ അബ്ദുൽ ലത്തീഫ്", "cat": "N", "mobile": ""}, {"id": 140, "name": "ചെമ്പാൻ ജാഫർ", "cat": "Y", "mobile": ""}, {"id": 141, "name": "ചെമ്പാൻ അബ്ദുൽ റസാഖ്", "cat": "N", "mobile": ""}, {"id": 142, "name": "ചെമ്പാൻ ഗഫൂർ", "cat": "Y", "mobile": ""}, {"id": 143, "name": "ചെമ്പാൻ ബാപ്പു മുസ്ല്യാർ", "cat": "Y", "mobile": ""}, {"id": 144, "name": "ചെമ്പാൻ അബ്ദുൽ വഹാബ്", "cat": "Y", "mobile": ""}, {"id": 145, "name": "ചെമ്പാൻ അബ്ദുൽ റഊഫ്", "cat": "Y", "mobile": ""}, {"id": 146, "name": "പുറ്റേക്കാടൻ ദാവൂദ്", "cat": "N", "mobile": ""}, {"id": 147, "name": "പാവുതൊടിക മൊയ്തീൻ കുട്ടി", "cat": "Y", "mobile": ""}, {"id": 148, "name": "അമ്പലഞ്ചീരി മുഹമ്മദ്", "cat": "Y", "mobile": ""}, {"id": 149, "name": "പാവുതൊടിക അസൈനാർ", "cat": "N", "mobile": ""}, {"id": 150, "name": "അലിപ്പറ മുഹമ്മദലി", "cat": "N", "mobile": ""}, {"id": 151, "name": "അലിപ്പറ അഫ്സത്ത്", "cat": "Y", "mobile": ""}, {"id": 152, "name": "അലിപ്പറ ശിഹാബ്", "cat": "N", "mobile": ""}, {"id": 153, "name": "അലിപ്പറ അബ്ദുറഹിമാൻ", "cat": "Y", "mobile": ""}, {"id": 154, "name": "TK മുനീർ ബാവ", "cat": "Y", "mobile": ""}, {"id": 155, "name": "പുറ്റേക്കാടൻ മുസ്താഖ്", "cat": "N", "mobile": ""}, {"id": 156, "name": "മേലകത്ത് നജീബ് (S/o മമ്മോക്കർ)", "cat": "Y", "mobile": ""}, {"id": 157, "name": "അമ്പലഞ്ചീരി നാറാണത്ത് മരക്കാർ", "cat": "Y", "mobile": ""}, {"id": 158, "name": "അമ്പലഞ്ചീരി നാരാണത്ത് ജാഫർ", "cat": "Y", "mobile": ""}, {"id": 159, "name": "അമ്പലഞ്ചീരി നാരാണത്ത് നിസാബ്", "cat": "N", "mobile": ""}, {"id": 160, "name": "അമ്പലഞ്ചീരി നാരാണത്ത് ഹമീദ്", "cat": "N", "mobile": ""}, {"id": 161, "name": "പാവുതൊടിക മൊയ്തീൻ കുട്ടി  (കാടപ്പടി)", "cat": "N", "mobile": ""}, {"id": 162, "name": "പാവുതൊടിക സലീം S/o മൊയ്തീൻ കുട്ടി", "cat": "N", "mobile": ""}, {"id": 163, "name": "പാവുതൊടിക ഷബീർ", "cat": "N", "mobile": ""}, {"id": 164, "name": "പാവുതൊടിക ഷഹീദ് S/o മൊയ്തീൻ കുട്ടി", "cat": "N", "mobile": ""}, {"id": 165, "name": "പാവുതൊടിക സക്കീർ", "cat": "N", "mobile": ""}, {"id": 166, "name": "പാവുതൊടിക മുഹമ്മദ് ഹാജി", "cat": "Y", "mobile": ""}, {"id": 167, "name": "പാവുതൊടിക ആലി", "cat": "Y", "mobile": ""}, {"id": 168, "name": "TK മൊയ്തീൻ കുട്ടി", "cat": "N", "mobile": ""}, {"id": 169, "name": "TK മുഹമ്മദ്", "cat": "Y", "mobile": ""}, {"id": 170, "name": "അലിപ്പറ അബ്ദുറഹിമാൻ", "cat": "N", "mobile": ""}, {"id": 171, "name": "കുപ്പാടൻ ബഷീർ", "cat": "N", "mobile": ""}, {"id": 172, "name": "കുന്തലത്ത് നജീബ്", "cat": "Y", "mobile": ""}, {"id": 173, "name": "കുന്തലത്ത് മഹബൂബ്", "cat": "Y", "mobile": ""}, {"id": 174, "name": "പൂറ്റേക്കാടൻ മുഹമ്മദ് ബാപ്പു", "cat": "Y", "mobile": ""}, {"id": 175, "name": "K.M.K സാദിഖ്", "cat": "Y", "mobile": ""}, {"id": 176, "name": "K.M.K ഷഫീഖ്", "cat": "Y", "mobile": ""}, {"id": 177, "name": "അബൂ സലഹ് കോഴിക്കോട്", "cat": "N", "mobile": ""}, {"id": 178, "name": "CP ഉണ്ണി മമ്മദ് ബാവുട്ടി", "cat": "Y", "mobile": ""}, {"id": 179, "name": "C.P. സഹീൽ", "cat": "N", "mobile": ""}, {"id": 180, "name": "CP മുസ്ഥഫ", "cat": "N", "mobile": ""}, {"id": 181, "name": "CP മുഹമ്മദ് കുട്ടി", "cat": "N", "mobile": ""}, {"id": 182, "name": "കാരക്കാടൻ റഫീഖ്", "cat": "N", "mobile": ""}, {"id": 183, "name": "കാരക്കാടൻ ഷിഹാബ്", "cat": "Y", "mobile": ""}, {"id": 184, "name": "കാരക്കാടൻ സാദിഖ്", "cat": "Y", "mobile": ""}, {"id": 185, "name": "കാരക്കാടൻ അബ്ദുന്നാസർ", "cat": "Y", "mobile": ""}, {"id": 186, "name": "മേലകത്ത് മമ്മോക്കർ", "cat": "Y", "mobile": ""}, {"id": 187, "name": "മേലകത്ത് ശിഹാബ്", "cat": "Y", "mobile": ""}, {"id": 188, "name": "അമ്പലഞ്ചീരി ഹസ്സൻ കുട്ടി", "cat": "Y", "mobile": ""}, {"id": 189, "name": "അലിപ്പറ മുഹമ്മദ് കുട്ടി", "cat": "N", "mobile": ""}, {"id": 190, "name": "അലിപ്പറ അബ്ദുൽ കരീം", "cat": "N", "mobile": ""}, {"id": 191, "name": "TK റാഷിദ്", "cat": "Y", "mobile": ""}, {"id": 192, "name": "TK ഫിറോസ്", "cat": "Y", "mobile": ""}, {"id": 193, "name": "TK മുഹമ്മദ് കുട്ടി", "cat": "N", "mobile": ""}, {"id": 194, "name": "TK അഷ്റഫ്", "cat": "N", "mobile": ""}, {"id": 195, "name": "TK സമീർ", "cat": "N", "mobile": ""}, {"id": 196, "name": "കുന്നത്ത് ശിഹാബ്", "cat": "N", "mobile": ""}, {"id": 197, "name": "കുന്നത്ത് മുജീബ്", "cat": "Y", "mobile": ""}, {"id": 198, "name": "കുന്നത്ത് അസൈൻ കുട്ടി", "cat": "Y", "mobile": ""}, {"id": 199, "name": "കുന്നത്ത് നൗഷാദ്", "cat": "Y", "mobile": ""}, {"id": 200, "name": "കുന്നത്ത് നിയാസ്", "cat": "Y", "mobile": ""}, {"id": 201, "name": "കുന്നത്ത് ഉമർ", "cat": "N", "mobile": ""}, {"id": 202, "name": "കുന്നത്ത് അബ്ബാസ്", "cat": "N", "mobile": ""}, {"id": 203, "name": "കുന്നത്ത് റഫീഖ്", "cat": "Y", "mobile": ""}, {"id": 204, "name": "കുന്നത്ത് ഹംസ", "cat": "N", "mobile": ""}, {"id": 205, "name": "കുന്നത്ത് ഉസ്മാൻ", "cat": "N", "mobile": ""}, {"id": 206, "name": "കുന്നത്ത് അവറാൻ കുട്ടി", "cat": "N", "mobile": ""}, {"id": 207, "name": "TK മമ്മദ്", "cat": "Y", "mobile": ""}, {"id": 208, "name": "TK ബീരാൻ മൊയ്തീൻ", "cat": "Y", "mobile": ""}, {"id": 209, "name": "പാവുതൊടിക മൊയ്തീൻ കുട്ടി", "cat": "Y", "mobile": ""}, {"id": 210, "name": "വരമ്പിനാലുങ്ങൽ ഷാഫി", "cat": "Y", "mobile": ""}, {"id": 211, "name": "പാവുതൊടിക സൈതാലി ബാവു", "cat": "Y", "mobile": ""}, {"id": 212, "name": "അലിപ്പറ അബ്ദുറസാഖ് ഉതിരാൻകുഴി", "cat": "N", "mobile": ""}, {"id": 213, "name": "അലിപ്പറ്റ  ഷൗക്കത്തലി  ഉതിരാൻകുഴി", "cat": "N", "mobile": ""}, {"id": 214, "name": "അലിപ്പറ ഹനീഫ", "cat": "N", "mobile": ""}, {"id": 215, "name": "അലിപ്പറ കൂട്ടുമാട്ട് സൈതലവി", "cat": "N", "mobile": ""}, {"id": 216, "name": "അലിപ്പറ കൂട്ടുമാട്ട് മുസ്തഫ", "cat": "N", "mobile": ""}, {"id": 217, "name": "അലിപ്പറ മൂസ", "cat": "N", "mobile": ""}, {"id": 218, "name": "അലിപ്പറ കരീം  (ബിച്ച)", "cat": "Y", "mobile": ""}, {"id": 219, "name": "അലിപ്പറ ഖദീജ", "cat": "Y", "mobile": ""}, {"id": 220, "name": "പാണ്ടിശാല ബഷീർ", "cat": "Y", "mobile": ""}, {"id": 221, "name": "A.V. ബഷീർ", "cat": "Y", "mobile": ""}, {"id": 222, "name": "A.V. അസീസ്", "cat": "Y", "mobile": ""}, {"id": 223, "name": "A.V. അബ്ദുസ്സലാം", "cat": "N", "mobile": ""}, {"id": 224, "name": "T.K. മുഹമ്മദ് (മാനു)", "cat": "N", "mobile": ""}, {"id": 225, "name": "അലിപ്പറ കൂട്ടുമാട്ട് ആമിന", "cat": "N", "mobile": ""}, {"id": 226, "name": "വൈശാരകത്ത് മൂസ", "cat": "N", "mobile": ""}, {"id": 227, "name": "അമ്പലഞ്ചീരി മുഹമ്മദ്", "cat": "N", "mobile": ""}, {"id": 228, "name": "അമ്പലഞ്ചീരി റംഷീദ്", "cat": "N", "mobile": ""}, {"id": 229, "name": "അമ്പലഞ്ചീരി സാഹിർ", "cat": "Y", "mobile": ""}, {"id": 230, "name": "അമ്പലഞ്ചീരി അസീസ്", "cat": "N", "mobile": ""}, {"id": 231, "name": "അമ്പലഞ്ചീരി മുനീർ", "cat": "N", "mobile": ""}, {"id": 232, "name": "അമ്പലഞ്ചീരി സിദ്ധിഖ്", "cat": "Y", "mobile": ""}, {"id": 233, "name": "അമ്പലഞ്ചീരി ആബിദീൻ", "cat": "Y", "mobile": ""}, {"id": 234, "name": "പാതിപ്പറമ്പൻ പാത്തുമ്മ", "cat": "N", "mobile": ""}, {"id": 235, "name": "ചിരങ്ങൻ കരീം മാസ്റ്റർ", "cat": "Y", "mobile": ""}, {"id": 236, "name": "അമ്പലഞ്ചീരി അസൈനാർ", "cat": "Y", "mobile": ""}, {"id": 237, "name": "അമ്പലഞ്ചീരി ഹസ്സൻ", "cat": "N", "mobile": ""}, {"id": 238, "name": "അമ്പലഞ്ചീരി മുഹമ്മദ്", "cat": "Y", "mobile": ""}, {"id": 239, "name": "അമ്പലഞ്ചീരി അസ്കർ", "cat": "N", "mobile": ""}, {"id": 240, "name": "അമ്പലഞ്ചീരി മമ്മദ്", "cat": "Y", "mobile": ""}, {"id": 241, "name": "അമ്പലഞ്ചീരി സൈദു", "cat": "Y", "mobile": ""}, {"id": 242, "name": "അമ്പലഞ്ചീരി ഹുസൈൻ", "cat": "N", "mobile": ""}, {"id": 243, "name": "N.H. മുസ്തഫ", "cat": "Y", "mobile": ""}, {"id": 244, "name": "അമ്പലഞ്ചീരി മുജീബ്", "cat": "Y", "mobile": ""}, {"id": 245, "name": "അമ്പലഞ്ചീരി ഉമൈമത്ത്", "cat": "Y", "mobile": ""}, {"id": 246, "name": "അമ്പലഞ്ചീരി ഷുഹൈബ്", "cat": "Y", "mobile": ""}, {"id": 247, "name": "പാലമഠത്തിൽ മൂസഹാജി", "cat": "N", "mobile": ""}, {"id": 248, "name": "പാതിപ്പറമ്പൻ മൊയ്തീൻ കുട്ടി", "cat": "Y", "mobile": ""}, {"id": 249, "name": "പാതിപ്പറമ്പൻ മുസ്തഫ", "cat": "Y", "mobile": ""}, {"id": 250, "name": "പാതിപ്പറമ്പൻ ഖദീജ", "cat": "N", "mobile": ""}, {"id": 251, "name": "പാതിപ്പറമ്പൻ ബിരാൻ കുട്ടി", "cat": "N", "mobile": ""}, {"id": 252, "name": "മാട്ടിൽ ഫിർദൌസ്", "cat": "N", "mobile": ""}, {"id": 253, "name": "മാട്ടിൽ മജീദ്", "cat": "N", "mobile": ""}, {"id": 254, "name": "അമ്പലഞ്ചീരി അസീസ്", "cat": "N", "mobile": ""}, {"id": 255, "name": "അമ്പലഞ്ചീരി ശിഹാബ് കാരക്കാട്ടുപറമ്പ്", "cat": "N", "mobile": ""}, {"id": 256, "name": "വൈക്കാറത്ത് മമ്മദ്", "cat": "N", "mobile": ""}, {"id": 257, "name": "അമ്പലഞ്ചീരി കാരക്കാട്ടുപറമ്പിൽ മൊയ്തീൻ കുട്ടി", "cat": "Y", "mobile": ""}, {"id": 258, "name": "വൈക്കാറത്ത് മുഹമ്മദ് കുട്ടി", "cat": "N", "mobile": ""}, {"id": 259, "name": "അമ്പലഞ്ചീരി കാരക്കാട്ടുപറമ്പിൽ മജീദ്", "cat": "N", "mobile": ""}, {"id": 260, "name": "അമ്പലഞ്ചീരി കാരക്കാട്ടുപറമ്പിൽ ഹനീഫ", "cat": "N", "mobile": ""}, {"id": 261, "name": "അമ്പലഞ്ചീരി കാരക്കാട്ടുപറമ്പിൽ ഷിഹാബ്", "cat": "Y", "mobile": ""}, {"id": 262, "name": "അമ്പലഞ്ചീരി കാരക്കാട്ടുപറമ്പിൽ അസൈനാർ", "cat": "Y", "mobile": ""}, {"id": 263, "name": "അമ്പലഞ്ചീരി കാരക്കാട്ടുപറമ്പിൽ അലവി", "cat": "N", "mobile": ""}, {"id": 264, "name": "അമ്പലഞ്ചീരി കാരക്കാട്ടുപറമ്പിൽ നൗഫൽ", "cat": "N", "mobile": ""}, {"id": 265, "name": "അമ്പലഞ്ചീരി മൊയ്തീൻ കുട്ടി", "cat": "Y", "mobile": ""}, {"id": 266, "name": "അമ്പലഞ്ചീരി കാരക്കാട്ടുപറമ്പിൽ റഫീഖ്", "cat": "N", "mobile": ""}, {"id": 267, "name": "C.K. അഷ്റഫ് ബാപ്പു", "cat": "N", "mobile": ""}, {"id": 268, "name": "അലിപ്പറ മുസ്തഫ", "cat": "N", "mobile": ""}, {"id": 269, "name": "അമ്പലഞ്ചീരി കാരക്കാട്ടുപറമ്പിൽ സൈതലവി", "cat": "Y", "mobile": ""}, {"id": 270, "name": "P.P. അബ്ദുൽ ജലീൽ", "cat": "N", "mobile": ""}, {"id": 271, "name": "ചിരങ്ങൻ മുഹമ്മദ് കോയ", "cat": "Y", "mobile": ""}, {"id": 272, "name": "അമ്പലഞ്ചീരി നിസാർ", "cat": "Y", "mobile": ""}, {"id": 273, "name": "അമ്പലഞ്ചീരി മൊയ്തീൻ (അയിന്തൂർ)", "cat": "N", "mobile": ""}, {"id": 274, "name": "അമ്പലഞ്ചീരി മുസ്കുട്ടി (അയിന്തൂർ)", "cat": "N", "mobile": ""}, {"id": 275, "name": "അലിപ്പറ മൊയ്തീൻ കുട്ടി", "cat": "N", "mobile": ""}, {"id": 276, "name": "കാരക്കാടൻ മുഹമ്മദ്", "cat": "N", "mobile": ""}, {"id": 277, "name": "കാരക്കാടൻ സൈതലവി", "cat": "N", "mobile": ""}, {"id": 278, "name": "മേടപ്പുറം നാസർ", "cat": "N", "mobile": ""}, {"id": 279, "name": "അലിപ്പറ മുഹമ്മദ് കുട്ടി (സംസം)", "cat": "N", "mobile": ""}, {"id": 280, "name": "അലിപ്പറ മുനീർ (സംസം)", "cat": "N", "mobile": ""}, {"id": 281, "name": "അലിപ്പറ അസീസ് (സംസം)", "cat": "N", "mobile": ""}, {"id": 282, "name": "അലിപ്പറ നാസർ", "cat": "Y", "mobile": ""}, {"id": 283, "name": "ഉതിരാം കുഴിയിൽ അബ്ദുൽ അസീസ്", "cat": "N", "mobile": ""}, {"id": 284, "name": "അലിപ്പറ്റ ഉതിരാം കുഴിയിൽ ശംസുദ്ധീൻ", "cat": "N", "mobile": ""}, {"id": 285, "name": "അലിപ്പറ്റ ഉതിരാം കുഴിയിൽ ഷറഫലി", "cat": "N", "mobile": ""}, {"id": 286, "name": "അമ്പലഞ്ചീരി മൂസ (ആനണ്ടിയിൽ)", "cat": "N", "mobile": ""}, {"id": 287, "name": "അമ്പലഞ്ചീരി അലവി (ആനണ്ടിയിൽ)", "cat": "N", "mobile": ""}, {"id": 288, "name": "ചെറ്റാലി ഷുഹൈബ്", "cat": "N", "mobile": ""}, {"id": 289, "name": "C.H. ഹസ്സൻ മാസ്റ്റർ", "cat": "Y", "mobile": ""}, {"id": 290, "name": "C.H. മുഹമ്മദ് കുട്ടി", "cat": "N", "mobile": ""}, {"id": 291, "name": "A പറമ്പിൽ ഹസ്സൻ കുട്ടി", "cat": "Y", "mobile": ""}, {"id": 292, "name": "A പറമ്പിൽ മുഹമ്മദ് കുട്ടി (ബാപ്പു)", "cat": "N", "mobile": ""}, {"id": 293, "name": "A പറമ്പിൽ അബ്ദുസ്സലാം", "cat": "Y", "mobile": ""}, {"id": 294, "name": "A പറമ്പിൽ അബ്ദു സമദ്", "cat": "Y", "mobile": ""}, {"id": 295, "name": "A അമ്പലഞ്ചീരി പറമ്പിൽ അഹമ്മദ് കുട്ടി (കുഞ്ഞാപ്പു)", "cat": "N", "mobile": ""}, {"id": 296, "name": "കുമ്മാളി ഉസ്മാൻ", "cat": "N", "mobile": ""}, {"id": 297, "name": "പള്ളിയാളി അബ്ദുറഹിമാൻ മുസ്ല്യാർ", "cat": "Y", "mobile": ""}, {"id": 298, "name": "A തെക്കയിൽ അബൂബക്കർ", "cat": "N", "mobile": ""}, {"id": 299, "name": "A തെക്കയിൽ നൌഷാദ് (S/o അബൂബക്കർ)", "cat": "N", "mobile": ""}, {"id": 300, "name": "A തെക്കയിൽ റിയാസ്", "cat": "N", "mobile": ""}, {"id": 301, "name": "A തെക്കയിൽ ഷറഫുദ്ധീൻ", "cat": "N", "mobile": ""}, {"id": 302, "name": "A ചാത്തംപിലാക്കൽ അഷ്റഫ്", "cat": "N", "mobile": ""}, {"id": 303, "name": "പാതിപ്പറമ്പൻ ഫൈസൽ", "cat": "Y", "mobile": ""}, {"id": 304, "name": "P.K. കുഞ്ഞാലി മാസ്റ്റർ", "cat": "N", "mobile": ""}, {"id": 305, "name": "സാജിദ ടീച്ചർ C.H.", "cat": "N", "mobile": ""}, {"id": 306, "name": "ചീരങ്ങൻ അൻവർ", "cat": "N", "mobile": ""}, {"id": 307, "name": "ചീരങ്ങൻ സിദ്ധിഖ്", "cat": "N", "mobile": ""}, {"id": 308, "name": "അമ്പലഞ്ചീരി ഹസ്സൻ കുട്ടി വളവിൽ", "cat": "N", "mobile": ""}, {"id": 309, "name": "അമ്പലഞ്ചീരി ബഷീർ തെക്കയിൽ (S/o മൂസ കോയ)", "cat": "N", "mobile": ""}, {"id": 310, "name": "A. പീടികയിൽ ജമാൽ", "cat": "N", "mobile": ""}, {"id": 311, "name": "A. പീടികയിൽ മുഹമ്മദ്", "cat": "N", "mobile": ""}, {"id": 312, "name": "A. പീടികയിൽ വളവിൽ ആസ്യ", "cat": "N", "mobile": ""}, {"id": 313, "name": "A. മൊയ്തീൻ കുട്ടി (വളവിൽ) ബീവി", "cat": "N", "mobile": ""}, {"id": 314, "name": "പാലമഠത്തിൽ ഇസ്മായിൽ", "cat": "N", "mobile": ""}, {"id": 315, "name": "പാവുതൊടിക വടപറമ്പിൽ ഫൈസൽ", "cat": "N", "mobile": ""}, {"id": 316, "name": "അമ്പലഞ്ചീരി ഫിറോസ് (S/o ഹസ്സൻ കുട്ടി)", "cat": "N", "mobile": ""}, {"id": 317, "name": "അലിപ്പറ ഫസലുറഹ്മാൻ (ടിറ്റി)", "cat": "N", "mobile": ""}, {"id": 318, "name": "അമ്പലഞ്ചീരി മുസ്തഫ (S/o മമ്മതാജി)", "cat": "Y", "mobile": ""}, {"id": 319, "name": "അലിപ്പറ പുത്തൻപുരക്കൽ ഗഫൂർ", "cat": "N", "mobile": ""}, {"id": 320, "name": "അലിപ്പറ പുത്തൻപുരക്കൽ സലാം മാസ്റ്റർ", "cat": "N", "mobile": ""}, {"id": 321, "name": "അലിപ്പറ ആലി കുട്ടി ഹാജി", "cat": "N", "mobile": ""}, {"id": 322, "name": "ചെറ്റാലി നൂറുൽ ഹഖ്", "cat": "Y", "mobile": ""}, {"id": 323, "name": "ചെറ്റാലി ഷമീർ", "cat": "N", "mobile": ""}, {"id": 324, "name": "കുപ്പാടൻ മുസ്തഫ", "cat": "N", "mobile": ""}, {"id": 325, "name": "വമ്പൻകുന്നത്ത് മുഹമ്മദലി", "cat": "Y", "mobile": ""}, {"id": 326, "name": "VK ഹാരിസ് (മുഹമ്മദലി)", "cat": "Y", "mobile": ""}, {"id": 327, "name": "A.V. മുജീബ്", "cat": "N", "mobile": ""}, {"id": 328, "name": "A.V. ഫസലുറഹ്മാൻ", "cat": "Y", "mobile": ""}, {"id": 329, "name": "A.V. അബ്ദുൽ ഹമീദ്", "cat": "N", "mobile": ""}, {"id": 330, "name": "A.V. സാദിഖ്", "cat": "Y", "mobile": ""}, {"id": 331, "name": "പുത്തൻപുരക്കൽ കുഞ്ഞാപ്പു", "cat": "N", "mobile": ""}, {"id": 332, "name": "അലിപ്പറ മുസ്തഫ", "cat": "N", "mobile": ""}, {"id": 333, "name": "അലിപ്പറ ഉസ്മാൻ മാസ്റ്റർ", "cat": "N", "mobile": ""}, {"id": 334, "name": "അലിപ്പറ പുത്തൻപുരക്കൽ ആസാദ്", "cat": "N", "mobile": ""}, {"id": 335, "name": "റംല ടീച്ചർ", "cat": "Y", "mobile": ""}, {"id": 336, "name": "A.C. ഇബ്രാഹിം ഹാജി", "cat": "N", "mobile": ""}, {"id": 337, "name": "A.C. സാജിദ", "cat": "N", "mobile": ""}, {"id": 338, "name": "A.C. ശരീഫ്", "cat": "Y", "mobile": ""}, {"id": 339, "name": "A.C. മുജീബ്", "cat": "Y", "mobile": ""}, {"id": 340, "name": "കിണറ്റിങ്ങൽ A.V. നബീസു കുട്ടി", "cat": "N", "mobile": ""}, {"id": 341, "name": "കിണറ്റിങ്ങൽ നബീസു കുട്ടി മകൾ", "cat": "Y", "mobile": ""}, {"id": 342, "name": "കാരക്കാടൻ സിദ്ധിഖ്", "cat": "Y", "mobile": ""}, {"id": 343, "name": "A.V. ശംസു", "cat": "Y", "mobile": ""}, {"id": 344, "name": "A.V. ഷാഫി", "cat": "Y", "mobile": ""}, {"id": 345, "name": "A.V. നാസർ", "cat": "N", "mobile": ""}];
+
+const STORAGE_KEY = 'fee_tracker_members_v1';
+const PAY_KEY = 'fee_tracker_payments_v1';
+const TPL_KEY = 'fee_tracker_wa_template_v1';
+const LOG_KEY = 'fee_tracker_payment_log_v1';
+const SHEET_URL_KEY = 'fee_tracker_sheet_url_v1';
+const ROLE_KEY = 'fee_tracker_current_role_v1';
+const PASS_ADMIN_KEY = 'fee_tracker_pass_admin_v1';
+const PASS_ENTRYY_KEY = 'fee_tracker_pass_entryY_v1';
+const PASS_ENTRYN_KEY = 'fee_tracker_pass_entryN_v1';
+
+const OLD_DEFAULT_TEMPLATE = "അസ്സലാമു അലൈക്കും, {name} നിങ്ങളുടെ {month} മാസത്തെ ഫീ ₹{amount} അടയ്ക്കാൻ ബാക്കിയുണ്ട്. ദയവായി എത്രയും വേഗം അടയ്ക്കുക. നന്ദി.";
+const DEFAULT_TEMPLATE = "അസ്സലാമു അലൈക്കും, {name} നിങ്ങളുടെ {month} മാസത്തെ മദ്രസ ഫീസ് ₹{amount} അടയ്ക്കാൻ ബാക്കിയുണ്ട്. ദയവായി എത്രയും വേഗം അടയ്ക്കുക. നന്ദി.\n\nകൊടിക്കൽ ദാറുസ്സലാം മദ്രസ \nസെക്രട്ടറി\n9539982856";
+
+let members = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || SEED_MEMBERS;
+// migrate older records: single studentName/studentClass -> students[] array
+let membersNeedMigration = false;
+members.forEach(m => {
+  if(!m.students){
+    m.students = (m.studentName || m.studentClass) ? [{name: m.studentName||'', cls: m.studentClass||''}] : [];
+    delete m.studentName;
+    delete m.studentClass;
+    membersNeedMigration = true;
+  }
+});
+let payments = JSON.parse(localStorage.getItem(PAY_KEY) || '{}');
+let waTemplate = localStorage.getItem(TPL_KEY);
+if(!waTemplate || waTemplate === OLD_DEFAULT_TEMPLATE){
+  waTemplate = DEFAULT_TEMPLATE;
+}
+let paymentLog = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+// migrate older entries that don't have an id yet
+let logNeededMigration = false;
+paymentLog.forEach(e => { if(!e.id){ e.id = genLogId(); logNeededMigration = true; } });
+
+function saveMembers(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(members)); }
+if(membersNeedMigration) saveMembers();
+function savePayments(){ localStorage.setItem(PAY_KEY, JSON.stringify(payments)); }
+function saveTemplate(){ localStorage.setItem(TPL_KEY, waTemplate); }
+function saveLog(){ localStorage.setItem(LOG_KEY, JSON.stringify(paymentLog)); }
+if(logNeededMigration) saveLog();
+
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+let currentDate = new Date();
+let currentView = 'members';
+let currentTab = 'all';
+let currentStatusFilter = 'all';
+let searchTerm = '';
+let historySearchTerm = '';
+let historyMonthFilter = 'all';
+let currentGridYear = new Date().getFullYear();
+let gridTab = 'all';
+let gridSearchTerm = '';
+
+// --- Roles & permissions ---
+let currentRole = localStorage.getItem(ROLE_KEY) || null;
+let selectedLoginRole = 'admin';
+
+function getPass(role){
+  if(role === 'admin') return localStorage.getItem(PASS_ADMIN_KEY) || '1341';
+  if(role === 'entryY') return localStorage.getItem(PASS_ENTRYY_KEY) || 'entryY123';
+  if(role === 'entryN') return localStorage.getItem(PASS_ENTRYN_KEY) || 'entryN123';
+  return null;
+}
+function isAdmin(){ return currentRole === 'admin'; }
+function lockedCategory(){
+  if(currentRole === 'entryY') return 'Y';
+  if(currentRole === 'entryN') return 'N';
+  return null;
+}
+function roleLabel(role){
+  if(role === 'admin') return '👤 Admin';
+  if(role === 'entryY') return '📗 Entry (Y Category)';
+  if(role === 'entryN') return '📘 Entry (N Category)';
+  return '';
+}
+
+function monthKey(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function monthLabel(d){ return MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear(); }
+
+function feeFor(cat){ return cat === 'Y' ? 200 : 100; }
+
+function isPaid(memberId, mk){
+  return !!(payments[mk] && payments[mk][memberId]);
+}
+function setPaid(memberId, mk, val){
+  if(!payments[mk]) payments[mk] = {};
+  if(val){
+    payments[mk][memberId] = true;
+    logPayment(memberId, mk);
+  } else {
+    delete payments[mk][memberId];
+    removeLogEntry(memberId, mk);
+  }
+  savePayments();
+}
+function genLogId(){
+  return 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+}
+function logPayment(memberId, mk, receipt){
+  const m = members.find(x=>x.id===memberId);
+  if(!m) return;
+  paymentLog.push({
+    id: genLogId(),
+    memberId: m.id,
+    name: m.name,
+    cat: m.cat,
+    mk: mk,
+    amount: feeFor(m.cat),
+    receipt: receipt || '',
+    ts: new Date().toISOString()
+  });
+  saveLog();
+}
+function removeLogEntry(memberId, mk){
+  // remove the most recent log entry for this member+month (undo)
+  for(let i = paymentLog.length - 1; i >= 0; i--){
+    if(paymentLog[i].memberId === memberId && paymentLog[i].mk === mk){
+      paymentLog.splice(i, 1);
+      break;
+    }
+  }
+  saveLog();
+}
+function recomputePaidFlag(memberId, mk){
+  // set payments[mk][memberId] true only if a log entry still exists for that member+month
+  const stillHas = paymentLog.some(e => e.memberId === memberId && e.mk === mk);
+  if(!payments[mk]) payments[mk] = {};
+  if(stillHas){
+    payments[mk][memberId] = true;
+  } else {
+    delete payments[mk][memberId];
+  }
+  savePayments();
+}
+
+function render(){
+  const mk = monthKey(currentDate);
+  document.getElementById('monthLabel').textContent = monthLabel(currentDate);
+
+  let list = members.slice();
+  if(currentTab !== 'all'){
+    list = list.filter(m => m.cat === currentTab);
+  }
+  if(searchTerm.trim()){
+    const q = searchTerm.trim().toLowerCase();
+    list = list.filter(m => m.name.toLowerCase().includes(q) || String(m.id) === q);
+  }
+  if(currentStatusFilter === 'paid'){
+    list = list.filter(m => isPaid(m.id, mk));
+  } else if(currentStatusFilter === 'pending'){
+    list = list.filter(m => !isPaid(m.id, mk));
+  }
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+  document.getElementById('emptyState').style.display = list.length ? 'none' : 'block';
+
+  list.forEach((m, i) => {
+    const paid = isPaid(m.id, mk);
+    const fee = feeFor(m.cat);
+    const catLabel = m.cat === 'Y' ? 'Y' : (m.cat === 'N' ? 'N' : '—');
+    const catClass = m.cat === 'Y' ? 'Y' : (m.cat === 'N' ? 'N' : 'unset');
+
+    let studentInfo = '';
+    if(m.cat === 'Y'){
+      if(m.students && m.students.length){
+        const studentLines = m.students.map(s =>
+          `🎓 ${escapeHtml(s.name||'')}${s.cls ? ' · Class '+escapeHtml(s.cls) : ''}`
+        ).join('<br>');
+        studentInfo = `<div style="font-size:.72rem;color:var(--muted);margin-top:2px;">
+          ${studentLines}
+          ${isAdmin() ? `<button class="student-edit-link" data-id="${m.id}" data-action="edit-student">✎</button>` : ''}
+        </div>`;
+      } else if(isAdmin()) {
+        studentInfo = `<div style="margin-top:3px;">
+          <button class="add-student-btn" data-id="${m.id}" data-action="add-student">+ Add Student</button>
+        </div>`;
+      }
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="idx">${m.id}</td>
+      <td class="name-cell">${escapeHtml(m.name)}${studentInfo}</td>
+      <td><span class="badge ${catClass}">${catLabel}</span></td>
+      <td class="fee">₹${fee}</td>
+      <td>
+        <div class="mobile-cell">
+          <input type="text" value="${escapeHtml(m.mobile||'')}" data-id="${m.id}" class="mobileInput" placeholder="Mobile">
+        </div>
+      </td>
+      <td>
+        <button class="status-btn ${paid?'paid':'pending'}" data-id="${m.id}" data-action="toggle">
+          ${paid ? '✓ Paid' : 'Pending'}
+        </button>
+      </td>
+      <td>
+        <button class="wa-btn" data-id="${m.id}" data-action="wa" ${(!m.mobile || paid) ? 'disabled' : ''} title="${paid ? 'Already paid' : (m.mobile ? 'Send WhatsApp reminder' : 'Add mobile number first')}"><svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.87 9.87 0 0 0 12.04 2m0 1.67c2.2 0 4.27.86 5.82 2.42a8.2 8.2 0 0 1 2.41 5.82c0 4.54-3.7 8.23-8.24 8.23a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23m-4.53 4.7c-.16 0-.42.06-.64.31s-.85.83-.85 2.02.87 2.35.99 2.51c.12.16 1.7 2.7 4.24 3.68 2.1.82 2.53.66 2.98.62.46-.04 1.48-.6 1.69-1.19s.21-1.09.15-1.19c-.06-.11-.23-.17-.48-.29s-1.48-.73-1.71-.81-.4-.12-.56.12-.64.81-.78.98-.29.19-.53.06a6.7 6.7 0 0 1-1.98-1.22 7.42 7.42 0 0 1-1.37-1.7c-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.44.12-.15.16-.25.24-.42.08-.16.04-.31-.02-.44s-.56-1.34-.76-1.84c-.2-.48-.4-.42-.56-.42h-.44"/></svg></button>
+      </td>
+      <td>
+        ${isAdmin() ? `<div class="row-actions">
+          <button class="icon-btn" data-id="${m.id}" data-action="edit" title="Edit">✎</button>
+          <button class="icon-btn" data-id="${m.id}" data-action="delete" title="Delete">🗑</button>
+        </div>` : ''}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // stats over the currently selected TAB scope (all/Y/N), not search/status filter, per whole month
+  let statScope = members.slice();
+  if(currentTab !== 'all') statScope = statScope.filter(m => m.cat === currentTab);
+  const totalCount = statScope.length;
+  const paidCount = statScope.filter(m => isPaid(m.id, mk)).length;
+  const pendingCount = totalCount - paidCount;
+  const catYCount = members.filter(m => m.cat === 'Y').length;
+  const catNCount = members.filter(m => m.cat === 'N').length;
+
+  document.getElementById('statTotal').textContent = totalCount;
+  document.getElementById('statCatY').textContent = catYCount;
+  document.getElementById('statCatN').textContent = catNCount;
+  document.getElementById('statPaid').textContent = paidCount;
+  document.getElementById('statPending').textContent = pendingCount;
+
+  if(document.getElementById('gridView')) renderGrid();
+  if(document.getElementById('historyTbody')) renderHistory();
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function monthLabelFromKey(mk){
+  const [y, mo] = mk.split('-').map(Number);
+  return MONTH_NAMES[mo-1] + ' ' + y;
+}
+
+function formatTs(iso){
+  const d = new Date(iso);
+  const datePart = d.toLocaleDateString('en-GB'); // dd/mm/yyyy
+  const timePart = d.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+  return datePart + ', ' + timePart;
+}
+
+function populateHistoryMonthFilter(){
+  const sel = document.getElementById('historyMonthFilter');
+  const existing = sel.value;
+  const mks = Array.from(new Set(paymentLog.map(e=>e.mk))).sort().reverse();
+  sel.innerHTML = '<option value="all">All Months</option>' +
+    mks.map(mk => `<option value="${mk}">${monthLabelFromKey(mk)}</option>`).join('');
+  if(mks.includes(existing)) sel.value = existing;
+}
+
+function renderHistory(){
+  populateHistoryMonthFilter();
+  document.getElementById('historyMonthFilter').value = historyMonthFilter;
+
+  let entries = paymentLog.slice();
+  if(historyMonthFilter !== 'all'){
+    entries = entries.filter(e => e.mk === historyMonthFilter);
+  }
+  if(historySearchTerm.trim()){
+    const q = historySearchTerm.trim().toLowerCase();
+    entries = entries.filter(e => e.name.toLowerCase().includes(q) || String(e.memberId) === q);
+  }
+  entries.sort((a,b) => new Date(b.ts) - new Date(a.ts));
+
+  const tbody = document.getElementById('historyTbody');
+  tbody.innerHTML = '';
+  document.getElementById('historyEmptyState').style.display = entries.length ? 'none' : 'block';
+
+  entries.forEach(e => {
+    const catLabel = e.cat === 'Y' ? 'Y' : (e.cat === 'N' ? 'N' : '—');
+    const catClass = e.cat === 'Y' ? 'Y' : (e.cat === 'N' ? 'N' : 'unset');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${formatTs(e.ts)}</td>
+      <td class="idx">${e.memberId}</td>
+      <td class="name-cell">${escapeHtml(e.name)}</td>
+      <td><span class="badge ${catClass}">${catLabel}</span></td>
+      <td>${escapeHtml(e.receipt || '—')}</td>
+      <td>${monthLabelFromKey(e.mk)}</td>
+      <td class="fee">₹${e.amount}</td>
+      <td>
+        ${isAdmin() ? `<div class="row-actions">
+          <button class="icon-btn" data-logid="${e.id}" data-action="edit-log" title="Edit">✎</button>
+          <button class="icon-btn" data-logid="${e.id}" data-action="delete-log" title="Delete">🗑</button>
+        </div>` : ''}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function getDueMonthCount(year){
+  const now = new Date();
+  if(year < now.getFullYear()) return 12;
+  if(year > now.getFullYear()) return 0;
+  return now.getMonth() + 1; // months elapsed including current
+}
+
+function getPendingMonthsForYear(memberId, year){
+  const due = getDueMonthCount(year);
+  const pending = [];
+  for(let mo = 1; mo <= due; mo++){
+    const mk = year + '-' + String(mo).padStart(2,'0');
+    if(!isPaid(memberId, mk)) pending.push(mo);
+  }
+  return pending;
+}
+
+function renderGrid(){
+  document.getElementById('yearLabel').textContent = currentGridYear;
+
+  let list = members.slice();
+  if(gridTab !== 'all'){
+    list = list.filter(m => m.cat === gridTab);
+  }
+  if(gridSearchTerm.trim()){
+    const q = gridSearchTerm.trim().toLowerCase();
+    list = list.filter(m => m.name.toLowerCase().includes(q) || String(m.id) === q);
+  }
+
+  const tbody = document.getElementById('gridTbody');
+  tbody.innerHTML = '';
+  document.getElementById('gridEmptyState').style.display = list.length ? 'none' : 'block';
+
+  list.forEach(m => {
+    const catLabel = m.cat === 'Y' ? 'Y' : (m.cat === 'N' ? 'N' : '—');
+    const catClass = m.cat === 'Y' ? 'Y' : (m.cat === 'N' ? 'N' : 'unset');
+    let monthCells = '';
+    for(let mo = 1; mo <= 12; mo++){
+      const mk = currentGridYear + '-' + String(mo).padStart(2,'0');
+      const paid = isPaid(m.id, mk);
+      monthCells += `<td><span class="month-cell ${paid?'paid':'pending'}" data-id="${m.id}" data-mk="${mk}">${paid?'✓':''}</span></td>`;
+    }
+    const pendingMonths = getPendingMonthsForYear(m.id, currentGridYear);
+    const totalPending = pendingMonths.length * feeFor(m.cat);
+    const hasMobile = !!(m.mobile && m.mobile.trim());
+    const waDisabled = (!hasMobile || pendingMonths.length === 0);
+    const waTitle = !hasMobile ? 'Add mobile number first' : (pendingMonths.length === 0 ? 'No pending fee' : `Send reminder for ${pendingMonths.length} month(s), ₹${totalPending}`);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="idx">${m.id}</td>
+      <td class="grid-name-cell">${escapeHtml(m.name)}</td>
+      <td><span class="badge ${catClass}">${catLabel}</span></td>
+      ${monthCells}
+      <td><button class="wa-btn" data-id="${m.id}" data-action="grid-wa" ${waDisabled ? 'disabled' : ''} title="${waTitle}"><svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.87 9.87 0 0 0 12.04 2m0 1.67c2.2 0 4.27.86 5.82 2.42a8.2 8.2 0 0 1 2.41 5.82c0 4.54-3.7 8.23-8.24 8.23a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23m-4.53 4.7c-.16 0-.42.06-.64.31s-.85.83-.85 2.02.87 2.35.99 2.51c.12.16 1.7 2.7 4.24 3.68 2.1.82 2.53.66 2.98.62.46-.04 1.48-.6 1.69-1.19s.21-1.09.15-1.19c-.06-.11-.23-.17-.48-.29s-1.48-.73-1.71-.81-.4-.12-.56.12-.64.81-.78.98-.29.19-.53.06a6.7 6.7 0 0 1-1.98-1.22 7.42 7.42 0 0 1-1.37-1.7c-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.44.12-.15.16-.25.24-.42.08-.16.04-.31-.02-.44s-.56-1.34-.76-1.84c-.2-.48-.4-.42-.56-.42h-.44"/></svg></button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+document.getElementById('gridTbody').addEventListener('click', (e)=>{
+  const cell = e.target.closest('.month-cell');
+  if(cell){
+    const id = Number(cell.dataset.id);
+    const mk = cell.dataset.mk;
+    setPaid(id, mk, !isPaid(id, mk));
+    renderGrid();
+    render();
+    renderHistory();
+    return;
+  }
+  const waBtn = e.target.closest('button[data-action="grid-wa"]');
+  if(waBtn){
+    sendGridWhatsApp(Number(waBtn.dataset.id));
+  }
+});
+
+function sendGridWhatsApp(memberId){
+  const m = members.find(x=>x.id===memberId);
+  if(!m || !m.mobile) return;
+  const pendingMonths = getPendingMonthsForYear(m.id, currentGridYear);
+  if(!pendingMonths.length) return;
+  const total = pendingMonths.length * feeFor(m.cat);
+  const monthsLabel = pendingMonths.map(mo => MONTH_NAMES[mo-1] + ' ' + currentGridYear).join(', ');
+
+  let phone = m.mobile.replace(/\D/g,'');
+  if(phone.length === 10) phone = '91' + phone;
+
+  const stu = studentsSummary(m.students);
+  const msg = waTemplate
+    .replaceAll('{name}', m.name)
+    .replaceAll('{amount}', total)
+    .replaceAll('{month}', monthsLabel)
+    .replaceAll('{student}', stu.names)
+    .replaceAll('{class}', stu.classes);
+  const url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
+}
+
+document.getElementById('prevYear').addEventListener('click', ()=>{
+  currentGridYear--;
+  renderGrid();
+});
+document.getElementById('nextYear').addEventListener('click', ()=>{
+  currentGridYear++;
+  renderGrid();
+});
+document.getElementById('gridTabs').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  gridTab = btn.dataset.tab;
+  document.querySelectorAll('#gridTabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderGrid();
+});
+document.getElementById('gridSearchBox').addEventListener('input', (e)=>{
+  gridSearchTerm = e.target.value;
+  renderGrid();
+});
+
+document.getElementById('tbody').addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  const id = Number(btn.dataset.id);
+  const action = btn.dataset.action;
+  const mk = monthKey(currentDate);
+
+  if(action === 'toggle'){
+    setPaid(id, mk, !isPaid(id, mk));
+    render();
+    renderHistory();
+  } else if(action === 'wa'){
+    sendWhatsApp(id);
+  } else if(action === 'edit'){
+    if(!isAdmin()) return;
+    openMemberModal(id);
+  } else if(action === 'add-student' || action === 'edit-student'){
+    if(!isAdmin()) return;
+    openStudentModal(id);
+  } else if(action === 'delete'){
+    if(!isAdmin()) return;
+    const m = members.find(x=>x.id===id);
+    if(m && confirm(`Remove "${m.name}"?`)){
+      members = members.filter(x=>x.id!==id);
+      saveMembers();
+      render();
+    }
+  }
+});
+
+document.getElementById('tbody').addEventListener('change', (e) => {
+  if(e.target.classList.contains('mobileInput')){
+    const id = Number(e.target.dataset.id);
+    const m = members.find(x=>x.id===id);
+    if(m){
+      m.mobile = e.target.value.trim();
+      saveMembers();
+      render();
+    }
+  }
+});
+
+function sendWhatsApp(id){
+  const m = members.find(x=>x.id===id);
+  if(!m || !m.mobile) return;
+  let phone = m.mobile.replace(/\D/g,'');
+  if(phone.length === 10) phone = '91' + phone;
+  const fee = feeFor(m.cat);
+  const stu = studentsSummary(m.students);
+  const msg = waTemplate
+    .replaceAll('{name}', m.name)
+    .replaceAll('{amount}', fee)
+    .replaceAll('{month}', monthLabel(currentDate))
+    .replaceAll('{student}', stu.names)
+    .replaceAll('{class}', stu.classes);
+  const url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg);
+  window.open(url, '_blank');
+}
+
+// Month nav
+document.getElementById('prevMonth').addEventListener('click', ()=>{
+  currentDate.setMonth(currentDate.getMonth()-1);
+  render();
+});
+document.getElementById('nextMonth').addEventListener('click', ()=>{
+  currentDate.setMonth(currentDate.getMonth()+1);
+  render();
+});
+
+// Mark whole month complete (bulk tick for currently visible tab/filter/search scope)
+document.getElementById('markAllPaidBtn').addEventListener('click', ()=>{
+  const mk = monthKey(currentDate);
+  let scope = members.slice();
+  if(currentTab !== 'all') scope = scope.filter(m => m.cat === currentTab);
+  if(searchTerm.trim()){
+    const q = searchTerm.trim().toLowerCase();
+    scope = scope.filter(m => m.name.toLowerCase().includes(q) || String(m.id) === q);
+  }
+  if(!scope.length){ alert('No members in this view.'); return; }
+  const label = currentTab === 'all' ? 'all members' : `category ${currentTab} members`;
+  if(!confirm(`Mark ${scope.length} ${label} as PAID for ${monthLabel(currentDate)}?`)) return;
+  if(!payments[mk]) payments[mk] = {};
+  scope.forEach(m => {
+    if(!payments[mk][m.id]){
+      payments[mk][m.id] = true;
+      logPayment(m.id, mk);
+    }
+  });
+  savePayments();
+  render();
+  renderHistory();
+});
+
+// Tabs
+document.getElementById('tabs').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  currentTab = btn.dataset.tab;
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+});
+
+// Search & status filter
+document.getElementById('searchBox').addEventListener('input', (e)=>{
+  searchTerm = e.target.value;
+  render();
+});
+document.getElementById('statusFilter').addEventListener('change', (e)=>{
+  currentStatusFilter = e.target.value;
+  render();
+});
+
+// Add/Edit member modal
+let editingId = null;
+
+function toggleStudentFields(){
+  const cat = document.getElementById('mCat').value;
+  document.getElementById('studentFieldsWrap').style.display = (cat === 'Y') ? '' : 'none';
+}
+document.getElementById('mCat').addEventListener('change', toggleStudentFields);
+
+// --- dynamic student row helpers (shared by both modals) ---
+function addStudentRow(containerId, name, cls){
+  const container = document.getElementById(containerId);
+  const row = document.createElement('div');
+  row.className = 'student-row';
+  row.innerHTML = `
+    <input type="text" class="s-name" placeholder="Student name" value="${escapeHtml(name||'')}">
+    <input type="text" class="s-class" placeholder="Class" value="${escapeHtml(cls||'')}">
+    <button type="button" class="s-remove" title="Remove">✕</button>
+  `;
+  row.querySelector('.s-remove').addEventListener('click', ()=> row.remove());
+  container.appendChild(row);
+}
+function setStudentRows(containerId, students){
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  if(students && students.length){
+    students.forEach(s => addStudentRow(containerId, s.name, s.cls));
+  } else {
+    addStudentRow(containerId, '', '');
+  }
+}
+function collectStudentRows(containerId){
+  const rows = document.querySelectorAll('#'+containerId+' .student-row');
+  const out = [];
+  rows.forEach(r => {
+    const name = r.querySelector('.s-name').value.trim();
+    const cls = r.querySelector('.s-class').value.trim();
+    if(name || cls) out.push({name, cls});
+  });
+  return out;
+}
+function studentsSummary(students){
+  if(!students || !students.length) return {names:'', classes:''};
+  return {
+    names: students.map(s=>s.name).filter(Boolean).join(', '),
+    classes: students.map(s=>s.cls).filter(Boolean).join(', ')
+  };
+}
+
+document.getElementById('mAddStudentRowBtn').addEventListener('click', ()=>{
+  addStudentRow('mStudentRows', '', '');
+});
+document.getElementById('sAddStudentRowBtn').addEventListener('click', ()=>{
+  addStudentRow('sStudentRows', '', '');
+});
+
+function openMemberModal(id){
+  editingId = id || null;
+  const overlay = document.getElementById('memberOverlay');
+  const title = document.getElementById('memberModalTitle');
+  if(id){
+    const m = members.find(x=>x.id===id);
+    title.textContent = 'Edit Member';
+    document.getElementById('mName').value = m.name;
+    document.getElementById('mCat').value = (m.cat === 'Y' ? 'Y' : 'N');
+    document.getElementById('mMobile').value = m.mobile || '';
+    setStudentRows('mStudentRows', m.students || []);
+  } else {
+    title.textContent = 'Add New Member';
+    document.getElementById('mName').value = '';
+    document.getElementById('mCat').value = 'N';
+    document.getElementById('mMobile').value = '';
+    setStudentRows('mStudentRows', []);
+  }
+  toggleStudentFields();
+  overlay.classList.add('show');
+}
+document.getElementById('addMemberBtn').addEventListener('click', ()=>openMemberModal(null));
+document.getElementById('memberCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('memberOverlay').classList.remove('show');
+});
+document.getElementById('memberSaveBtn').addEventListener('click', ()=>{
+  const name = document.getElementById('mName').value.trim();
+  const cat = document.getElementById('mCat').value;
+  const mobile = document.getElementById('mMobile').value.trim();
+  const students = collectStudentRows('mStudentRows');
+  if(!name){ alert('Please enter a name'); return; }
+  if(editingId){
+    const m = members.find(x=>x.id===editingId);
+    m.name = name; m.cat = cat; m.mobile = mobile;
+    m.students = students;
+  } else {
+    const newId = members.length ? Math.max(...members.map(m=>m.id)) + 1 : 1;
+    members.push({id:newId, name, cat, mobile, students});
+  }
+  saveMembers();
+  document.getElementById('memberOverlay').classList.remove('show');
+  render();
+});
+
+// Quick Add/Edit Student modal (for Y category members)
+let studentEditingId = null;
+function openStudentModal(id){
+  const m = members.find(x=>x.id===id);
+  if(!m) return;
+  studentEditingId = id;
+  document.getElementById('studentModalTitle').textContent = (m.students && m.students.length) ? 'Edit Students' : 'Add Student';
+  document.getElementById('studentModalMemberName').textContent = m.name;
+  setStudentRows('sStudentRows', m.students || []);
+  document.getElementById('studentOverlay').classList.add('show');
+}
+document.getElementById('studentCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('studentOverlay').classList.remove('show');
+});
+document.getElementById('studentSaveBtn').addEventListener('click', ()=>{
+  const m = members.find(x=>x.id===studentEditingId);
+  if(!m) return;
+  m.students = collectStudentRows('sStudentRows');
+  saveMembers();
+  document.getElementById('studentOverlay').classList.remove('show');
+  render();
+});
+
+// WhatsApp template modal
+document.getElementById('waTemplateBtn').addEventListener('click', ()=>{
+  document.getElementById('waTemplateText').value = waTemplate;
+  document.getElementById('waOverlay').classList.add('show');
+});
+document.getElementById('waCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('waOverlay').classList.remove('show');
+});
+document.getElementById('waSaveBtn').addEventListener('click', ()=>{
+  waTemplate = document.getElementById('waTemplateText').value;
+  saveTemplate();
+  document.getElementById('waOverlay').classList.remove('show');
+});
+
+// View switcher
+document.getElementById('viewSwitch').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn || !btn.dataset.view) return;
+  currentView = btn.dataset.view;
+  document.querySelectorAll('#viewSwitch button[data-view]').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('membersView').style.display = currentView === 'members' ? '' : 'none';
+  document.getElementById('gridView').style.display = currentView === 'grid' ? '' : 'none';
+  document.getElementById('historyView').style.display = currentView === 'history' ? '' : 'none';
+  if(currentView === 'history') renderHistory();
+  if(currentView === 'grid') renderGrid();
+});
+
+document.getElementById('historySearchBox').addEventListener('input', (e)=>{
+  historySearchTerm = e.target.value;
+  renderHistory();
+});
+document.getElementById('historyMonthFilter').addEventListener('change', (e)=>{
+  historyMonthFilter = e.target.value;
+  renderHistory();
+});
+
+// Add Payment modal
+function nextMonthKeyOf(mk){
+  const [y, mo] = mk.split('-').map(Number);
+  let ny = y, nmo = mo + 1;
+  if(nmo > 12){ nmo = 1; ny = y + 1; }
+  return ny + '-' + String(nmo).padStart(2,'0');
+}
+
+function getLastPaidMonth(memberId){
+  let last = null;
+  for(const mk in payments){
+    if(payments[mk] && payments[mk][memberId]){
+      if(!last || mk > last) last = mk;
+    }
+  }
+  return last;
+}
+
+function populatePaymentMonthSelect(targetMk){
+  const sel = document.getElementById('pMonth');
+  sel.innerHTML = '';
+  const centerMk = targetMk || monthKey(currentDate);
+  const [cy, cmo] = centerMk.split('-').map(Number);
+  const centerDate = new Date(cy, cmo - 1, 1);
+  for(let offset = 3; offset >= -12; offset--){
+    const d = new Date(centerDate.getFullYear(), centerDate.getMonth() - offset, 1);
+    const mk = monthKey(d);
+    const opt = document.createElement('option');
+    opt.value = mk;
+    opt.textContent = monthLabel(d);
+    sel.appendChild(opt);
+  }
+  sel.value = centerMk;
+}
+
+function updateMonthsPreview(){
+  const slNo = Number(document.getElementById('pSlNo').value);
+  const amount = Number(document.getElementById('pAmount').value);
+  const startMk = document.getElementById('pMonth').value;
+  const previewEl = document.getElementById('pMonthsPreview');
+  const m = members.find(x=>x.id===slNo);
+  if(!m || !amount || !startMk){
+    previewEl.textContent = '';
+    return;
+  }
+  const fee = feeFor(m.cat);
+  const monthsToMark = Math.max(1, Math.floor(amount / fee));
+  const labels = [];
+  let mk = startMk;
+  for(let i=0;i<monthsToMark;i++){
+    labels.push(monthLabelFromKey(mk));
+    mk = nextMonthKeyOf(mk);
+  }
+  if(monthsToMark > 1){
+    previewEl.textContent = '₹' + amount + ' covers ' + monthsToMark + ' months — will auto-tick: ' + labels.join(', ');
+    previewEl.style.color = 'var(--green-dark)';
+  } else {
+    previewEl.textContent = 'Will mark ' + labels[0] + ' as Paid.';
+    previewEl.style.color = 'var(--muted)';
+  }
+}
+
+function updateMemberPreview(){
+  const slNo = Number(document.getElementById('pSlNo').value);
+  const preview = document.getElementById('pMemberPreview');
+  const amountInput = document.getElementById('pAmount');
+  const m = members.find(x=>x.id===slNo);
+  if(!slNo){
+    preview.textContent = '';
+    document.getElementById('pMonthsPreview').textContent = '';
+    return;
+  }
+  if(m){
+    const lock = lockedCategory();
+    if(lock && m.cat !== lock){
+      preview.textContent = '✗ This SL number is category ' + m.cat + '. Your login can only add payments for category ' + lock + '.';
+      preview.style.color = 'var(--red)';
+      document.getElementById('pMonthsPreview').textContent = '';
+      return;
+    }
+    preview.textContent = '✓ ' + m.name + ' (' + (m.cat || '—') + ')';
+    preview.style.color = 'var(--green)';
+    if(!amountInput.value){
+      amountInput.value = feeFor(m.cat);
+    }
+    // auto-select the month right after this member's last paid month
+    // if this is their first ever entry, start from January 2026
+    const lastPaid = getLastPaidMonth(m.id);
+    const targetMk = lastPaid ? nextMonthKeyOf(lastPaid) : '2026-01';
+    populatePaymentMonthSelect(targetMk);
+  } else {
+    preview.textContent = 'No member found with this SL number';
+    preview.style.color = 'var(--red)';
+  }
+  updateMonthsPreview();
+}
+
+function openPaymentModal(){
+  document.getElementById('pSlNo').value = '';
+  document.getElementById('pReceipt').value = '';
+  document.getElementById('pAmount').value = '';
+  document.getElementById('pMemberPreview').textContent = '';
+  document.getElementById('pMonthsPreview').textContent = '';
+  populatePaymentMonthSelect();
+  document.getElementById('paymentOverlay').classList.add('show');
+}
+document.getElementById('addPaymentBtn').addEventListener('click', openPaymentModal);
+document.getElementById('addPaymentBtnTop').addEventListener('click', openPaymentModal);
+document.getElementById('pSlNo').addEventListener('input', updateMemberPreview);
+document.getElementById('pAmount').addEventListener('input', updateMonthsPreview);
+document.getElementById('pMonth').addEventListener('change', updateMonthsPreview);
+document.getElementById('paymentCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('paymentOverlay').classList.remove('show');
+});
+document.getElementById('paymentSaveBtn').addEventListener('click', ()=>{
+  const slNo = Number(document.getElementById('pSlNo').value);
+  const receipt = document.getElementById('pReceipt').value.trim();
+  const amount = Number(document.getElementById('pAmount').value);
+  const startMk = document.getElementById('pMonth').value;
+  const m = members.find(x=>x.id===slNo);
+  if(!m){ alert('No member found with that SL number.'); return; }
+  if(!amount || amount <= 0){ alert('Please enter a valid amount.'); return; }
+  const lock = lockedCategory();
+  if(lock && m.cat !== lock){ alert('Your login can only add payments for category ' + lock + ' members.'); return; }
+
+  const fee = feeFor(m.cat);
+  const monthsToMark = Math.max(1, Math.floor(amount / fee));
+
+  let mk = startMk;
+  let remaining = amount;
+  for(let i=0;i<monthsToMark;i++){
+    if(!payments[mk]) payments[mk] = {};
+    payments[mk][m.id] = true;
+
+    const portion = (i === monthsToMark - 1) ? remaining : Math.round((amount / monthsToMark) * 100) / 100;
+    remaining -= portion;
+
+    paymentLog.push({
+      id: genLogId(),
+      memberId: m.id,
+      name: m.name,
+      cat: m.cat,
+      mk: mk,
+      amount: portion,
+      receipt: receipt,
+      ts: new Date().toISOString()
+    });
+
+    mk = nextMonthKeyOf(mk);
+  }
+  savePayments();
+  saveLog();
+
+  document.getElementById('paymentOverlay').classList.remove('show');
+  render();
+  renderHistory();
+});
+
+// Edit / Delete payment log entries
+document.getElementById('historyTbody').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  if(!isAdmin()) return;
+  const logId = btn.dataset.logid;
+  const action = btn.dataset.action;
+  if(action === 'edit-log'){
+    openEditPaymentModal(logId);
+  } else if(action === 'delete-log'){
+    const entry = paymentLog.find(x=>x.id===logId);
+    if(!entry) return;
+    if(confirm(`Delete this payment entry for "${entry.name}" (${monthLabelFromKey(entry.mk)}, ₹${entry.amount})?`)){
+      paymentLog = paymentLog.filter(x=>x.id!==logId);
+      saveLog();
+      recomputePaidFlag(entry.memberId, entry.mk);
+      render();
+      renderHistory();
+    }
+  }
+});
+
+function populateEditMonthSelect(targetMk){
+  const sel = document.getElementById('epMonth');
+  sel.innerHTML = '';
+  const [cy, cmo] = targetMk.split('-').map(Number);
+  const centerDate = new Date(cy, cmo - 1, 1);
+  for(let offset = 12; offset >= -24; offset--){
+    const d = new Date(centerDate.getFullYear(), centerDate.getMonth() - offset, 1);
+    const mk = monthKey(d);
+    const opt = document.createElement('option');
+    opt.value = mk;
+    opt.textContent = monthLabel(d);
+    sel.appendChild(opt);
+  }
+  sel.value = targetMk;
+}
+
+let editingLogId = null;
+function openEditPaymentModal(logId){
+  const entry = paymentLog.find(x=>x.id===logId);
+  if(!entry) return;
+  editingLogId = logId;
+  document.getElementById('epSlNo').value = entry.memberId;
+  document.getElementById('epReceipt').value = entry.receipt || '';
+  document.getElementById('epAmount').value = entry.amount;
+  populateEditMonthSelect(entry.mk);
+  const m = members.find(x=>x.id===entry.memberId);
+  document.getElementById('epMemberPreview').textContent = m ? ('✓ ' + m.name + ' (' + (m.cat||'—') + ')') : 'Member not found (record kept for history)';
+  document.getElementById('epMemberPreview').style.color = m ? 'var(--green)' : 'var(--red)';
+  document.getElementById('editPaymentOverlay').classList.add('show');
+}
+document.getElementById('epSlNo').addEventListener('input', ()=>{
+  const slNo = Number(document.getElementById('epSlNo').value);
+  const m = members.find(x=>x.id===slNo);
+  const preview = document.getElementById('epMemberPreview');
+  if(!slNo){ preview.textContent = ''; return; }
+  if(m){
+    preview.textContent = '✓ ' + m.name + ' (' + (m.cat||'—') + ')';
+    preview.style.color = 'var(--green)';
+  } else {
+    preview.textContent = 'No member found with this SL number';
+    preview.style.color = 'var(--red)';
+  }
+});
+document.getElementById('editPaymentCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('editPaymentOverlay').classList.remove('show');
+});
+document.getElementById('editPaymentSaveBtn').addEventListener('click', ()=>{
+  const entry = paymentLog.find(x=>x.id===editingLogId);
+  if(!entry) return;
+  const newSlNo = Number(document.getElementById('epSlNo').value);
+  const newReceipt = document.getElementById('epReceipt').value.trim();
+  const newAmount = Number(document.getElementById('epAmount').value);
+  const newMk = document.getElementById('epMonth').value;
+  const m = members.find(x=>x.id===newSlNo);
+  if(!m){ alert('No member found with that SL number.'); return; }
+  if(!newAmount || newAmount <= 0){ alert('Please enter a valid amount.'); return; }
+
+  const oldMemberId = entry.memberId;
+  const oldMk = entry.mk;
+
+  // update the entry itself
+  entry.memberId = m.id;
+  entry.name = m.name;
+  entry.cat = m.cat;
+  entry.mk = newMk;
+  entry.amount = newAmount;
+  entry.receipt = newReceipt;
+  saveLog();
+
+  // recompute paid flags for both the old and new member/month combos
+  recomputePaidFlag(oldMemberId, oldMk);
+  recomputePaidFlag(m.id, newMk);
+
+  document.getElementById('editPaymentOverlay').classList.remove('show');
+  render();
+  renderHistory();
+});
+
+// --- Google Sheet Sync ---
+function rebuildPaymentsFromLog(){
+  payments = {};
+  paymentLog.forEach(e => {
+    if(!payments[e.mk]) payments[e.mk] = {};
+    payments[e.mk][e.memberId] = true;
+  });
+  savePayments();
+}
+
+function getSheetUrl(){
+  return localStorage.getItem(SHEET_URL_KEY) || '';
+}
+function setSheetStatus(text){
+  document.getElementById('sheetSyncStatus').textContent = text;
+}
+
+document.getElementById('printBtn').addEventListener('click', ()=>{
+  window.print();
+});
+
+document.getElementById('sheetSyncBtnTop').addEventListener('click', ()=>{
+  document.getElementById('sheetUrlInput').value = getSheetUrl();
+  setSheetStatus('');
+  document.getElementById('sheetSyncOverlay').classList.add('show');
+});
+document.getElementById('sheetSyncCloseBtn').addEventListener('click', ()=>{
+  document.getElementById('sheetSyncOverlay').classList.remove('show');
+});
+document.getElementById('sheetSaveUrlBtn').addEventListener('click', ()=>{
+  const url = document.getElementById('sheetUrlInput').value.trim();
+  localStorage.setItem(SHEET_URL_KEY, url);
+  setSheetStatus(url ? 'URL saved.' : 'URL cleared.');
+});
+
+document.getElementById('sheetBackupBtn').addEventListener('click', async ()=>{
+  const url = document.getElementById('sheetUrlInput').value.trim();
+  if(!url){ setSheetStatus('Please enter and save the Web App URL first.'); return; }
+  localStorage.setItem(SHEET_URL_KEY, url);
+  setSheetStatus('Backing up to Google Sheet...');
+  try{
+    const payload = { members, paymentLog, waTemplate };
+    const res = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(data && data.status === 'ok'){
+      setSheetStatus('✓ Backup complete — ' + members.length + ' members, ' + paymentLog.length + ' payment records saved to the Sheet.\nAt ' + new Date().toLocaleString());
+    } else {
+      setSheetStatus('Backup finished but got an unexpected response. Check the Apps Script deployment.');
+    }
+  } catch(err){
+    setSheetStatus('✗ Backup failed: ' + err.message + '\nCheck the URL and that the Apps Script is deployed with "Anyone" access.');
+  }
+});
+
+document.getElementById('sheetRestoreBtn').addEventListener('click', async ()=>{
+  const url = document.getElementById('sheetUrlInput').value.trim();
+  if(!url){ setSheetStatus('Please enter and save the Web App URL first.'); return; }
+  if(!confirm('This will replace all members, students, and payment history currently in this browser with what is stored in the Google Sheet. Continue?')) return;
+  localStorage.setItem(SHEET_URL_KEY, url);
+  setSheetStatus('Restoring from Google Sheet...');
+  try{
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+    if(!data || !data.members){
+      setSheetStatus('Restore failed: unexpected response from the Sheet.');
+      return;
+    }
+    members = data.members || [];
+    paymentLog = (data.paymentLog || []).map(e => (e.id ? e : Object.assign({}, e, {id: genLogId()})));
+    waTemplate = data.waTemplate || DEFAULT_TEMPLATE;
+    rebuildPaymentsFromLog();
+    saveMembers();
+    saveLog();
+    saveTemplate();
+    render();
+    renderHistory();
+    setSheetStatus('✓ Restored ' + members.length + ' members and ' + paymentLog.length + ' payment records from the Sheet.\nAt ' + new Date().toLocaleString());
+  } catch(err){
+    setSheetStatus('✗ Restore failed: ' + err.message + '\nCheck the URL and that the Apps Script is deployed with "Anyone" access.');
+  }
+});
+
+// --- Login / Logout / Role UI ---
+function applyRoleUI(){
+  document.getElementById('sessionRoleLabel').textContent = roleLabel(currentRole);
+  document.getElementById('manageLoginsBtn').style.display = isAdmin() ? '' : 'none';
+  document.getElementById('addMemberBtn').style.display = isAdmin() ? '' : 'none';
+  document.getElementById('sheetSyncBtnTop').style.display = isAdmin() ? '' : 'none';
+  document.getElementById('waTemplateBtn').style.display = isAdmin() ? '' : 'none';
+
+  const lock = lockedCategory();
+  if(lock){
+    currentTab = lock;
+    gridTab = lock;
+    document.querySelectorAll('#tabs button, #gridTabs button').forEach(b=>{
+      const show = (b.dataset.tab === lock);
+      b.style.display = show ? '' : 'none';
+      b.classList.toggle('active', show);
+    });
+  } else {
+    document.querySelectorAll('#tabs button, #gridTabs button').forEach(b=>{ b.style.display = ''; });
+  }
+}
+
+function showLogin(){
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('loginPasscode').value = '';
+  document.getElementById('loginError').textContent = '';
+}
+function hideLogin(){
+  document.getElementById('loginOverlay').style.display = 'none';
+}
+
+document.getElementById('roleSelect').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  selectedLoginRole = btn.dataset.role;
+  document.querySelectorAll('#roleSelect button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+});
+
+function attemptLogin(){
+  const entered = document.getElementById('loginPasscode').value;
+  const correct = getPass(selectedLoginRole);
+  if(entered && entered === correct){
+    currentRole = selectedLoginRole;
+    localStorage.setItem(ROLE_KEY, currentRole);
+    hideLogin();
+    applyRoleUI();
+    render();
+    renderGrid();
+    renderHistory();
+    openPaymentModal(); // default to Add Payment page on open
+  } else {
+    document.getElementById('loginError').textContent = 'Incorrect passcode. Try again.';
+  }
+}
+document.getElementById('loginSubmitBtn').addEventListener('click', attemptLogin);
+document.getElementById('loginPasscode').addEventListener('keydown', (e)=>{
+  if(e.key === 'Enter') attemptLogin();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  if(!confirm('Log out of this device? You will need the passcode again to log back in.')) return;
+  currentRole = null;
+  localStorage.removeItem(ROLE_KEY);
+  showLogin();
+});
+
+document.getElementById('manageLoginsBtn').addEventListener('click', ()=>{
+  document.getElementById('passAdminInput').value = getPass('admin');
+  document.getElementById('passEntryYInput').value = getPass('entryY');
+  document.getElementById('passEntryNInput').value = getPass('entryN');
+  document.getElementById('manageLoginsOverlay').classList.add('show');
+});
+document.getElementById('manageLoginsCancelBtn').addEventListener('click', ()=>{
+  document.getElementById('manageLoginsOverlay').classList.remove('show');
+});
+document.getElementById('manageLoginsSaveBtn').addEventListener('click', ()=>{
+  localStorage.setItem(PASS_ADMIN_KEY, document.getElementById('passAdminInput').value.trim() || '1341');
+  localStorage.setItem(PASS_ENTRYY_KEY, document.getElementById('passEntryYInput').value.trim() || 'entryY123');
+  localStorage.setItem(PASS_ENTRYN_KEY, document.getElementById('passEntryNInput').value.trim() || 'entryN123');
+  document.getElementById('manageLoginsOverlay').classList.remove('show');
+  alert('Passcodes updated.');
+});
+
+render();
+renderHistory();
+
+// gate access behind login, and land on Add Payment by default once logged in
+if(!currentRole){
+  showLogin();
+} else {
+  hideLogin();
+  applyRoleUI();
+  render();
+  renderGrid();
+  renderHistory();
+  openPaymentModal();
+}
+</script>
+</body>
+</html>
