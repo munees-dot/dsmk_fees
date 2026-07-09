@@ -84,11 +84,23 @@
     background:#111820;color:#fff;font-weight:700;text-transform:uppercase;
     font-size:.68rem;letter-spacing:.03em;text-align:center;padding:10px 8px;
   }
-  table.grid-table thead th.grid-name{text-align:left;}
-  table.grid-table thead th.grid-sl{text-align:center;width:44px;}
+  table.grid-table thead th.col-name{text-align:left;}
+  table.grid-table thead th.col-sl{text-align:center;width:44px;}
   table.grid-table tbody td{text-align:center;padding:8px 6px;}
   table.grid-table tbody td.grid-name-cell{text-align:left;font-weight:600;}
   table.grid-table tbody tr:nth-child(even){background:#f7f9f8;}
+
+  /* Freeze SL No. and Name columns so they stay visible while scrolling horizontally (mobile-friendly) */
+  th.col-sl, th.col-name, td.col-sl, td.col-name{
+    position:sticky;
+    background:#fff;
+  }
+  th.col-sl, td.col-sl{ left:0; width:44px; min-width:44px; max-width:44px; z-index:3; }
+  th.col-name, td.col-name{ left:44px; width:150px; min-width:150px; max-width:150px; z-index:2; white-space:normal; }
+  thead th.col-sl, thead th.col-name{ z-index:5; background:#eef4f1; }
+  table.grid-table thead th.col-sl, table.grid-table thead th.col-name{ background:#111820; }
+  tbody tr:nth-child(even) td.col-sl, tbody tr:nth-child(even) td.col-name{ background:#f9fbfa; }
+  table.grid-table tbody tr:nth-child(even) td.col-sl, table.grid-table tbody tr:nth-child(even) td.col-name{ background:#f7f9f8; }
   .month-cell{
     cursor:pointer;border-radius:6px;width:30px;height:24px;display:inline-flex;
     align-items:center;justify-content:center;font-weight:700;font-size:.8rem;
@@ -97,6 +109,8 @@
   .month-cell.paid{background:var(--green-soft);color:var(--green-dark);}
   .month-cell.pending{background:transparent;color:var(--line);border:1px dashed var(--line);}
   .month-cell:hover{outline:2px solid var(--accent);}
+  .month-cell.readonly{cursor:default;}
+  .month-cell.readonly:hover{outline:none;}
 
   .add-student-btn{
     border:1px dashed var(--accent);background:transparent;color:var(--accent);
@@ -191,7 +205,7 @@
   thead th{
     text-align:left;padding:11px 12px;background:#eef4f1;color:var(--muted);
     font-weight:600;font-size:.72rem;text-transform:uppercase;letter-spacing:.03em;
-    position:sticky;top:0;
+    position:sticky;top:0;z-index:4;
   }
   tbody td{padding:10px 12px;border-top:1px solid var(--line);vertical-align:middle;}
   tbody tr:hover{background:#f9fbfa;}
@@ -215,6 +229,7 @@
   }
   .status-btn.paid{background:var(--green-soft);color:var(--green-dark);}
   .status-btn.pending{background:var(--red-soft);color:var(--red);}
+  .status-btn:disabled{cursor:default;opacity:.9;}
   .wa-btn{
     border:none;background:#dcf4e3;color:#0F7A3D;width:34px;height:34px;border-radius:9px;
     cursor:pointer;font-size:1.1rem;display:flex;align-items:center;justify-content:center;
@@ -230,7 +245,7 @@
   }
   .icon-btn:hover{background:var(--line);color:var(--ink);}
 
-  .table-scroll{overflow-x:auto;}
+  .table-scroll{overflow-x:auto;overflow-y:auto;max-height:70vh;}
   .empty-state{padding:40px;text-align:center;color:var(--muted);}
 
   /* modal */
@@ -307,7 +322,7 @@
     </div>
     <div class="field">
       <label>Passcode</label>
-      <input type="password" id="loginPasscode" inputmode="numeric" placeholder="Enter passcode">
+      <input type="password" id="loginPasscode" inputmode="text" placeholder="Enter passcode">
     </div>
     <div id="loginError" style="color:var(--red);font-size:.82rem;min-height:18px;"></div>
     <button class="btn btn-primary" id="loginSubmitBtn" style="width:100%;">Login</button>
@@ -373,8 +388,8 @@
       <table>
         <thead>
           <tr>
-            <th>SL No.</th>
-            <th>Name</th>
+            <th class="col-sl">SL No.</th>
+            <th class="col-name">Name</th>
             <th>Category</th>
             <th>Fee</th>
             <th>Mobile</th>
@@ -411,8 +426,8 @@
         <table class="grid-table">
           <thead>
             <tr>
-              <th class="grid-sl">SL</th>
-              <th class="grid-name">Name</th>
+              <th class="col-sl">SL</th>
+              <th class="col-name">Name</th>
               <th>Category</th>
               <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
               <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
@@ -443,8 +458,8 @@
           <thead>
             <tr>
               <th>Date &amp; Time</th>
-              <th>SL No.</th>
-              <th>Name</th>
+              <th class="col-sl">SL No.</th>
+              <th class="col-name">Name</th>
               <th>Category</th>
               <th>Receipt No.</th>
               <th>Month</th>
@@ -813,8 +828,8 @@ function render(){
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="idx">${m.id}</td>
-      <td class="name-cell">${escapeHtml(m.name)}${studentInfo}</td>
+      <td class="idx col-sl">${m.id}</td>
+      <td class="name-cell col-name">${escapeHtml(m.name)}${studentInfo}</td>
       <td><span class="badge ${catClass}">${catLabel}</span></td>
       <td class="fee">₹${fee}</td>
       <td>
@@ -823,7 +838,7 @@ function render(){
         </div>
       </td>
       <td>
-        <button class="status-btn ${paid?'paid':'pending'}" data-id="${m.id}" data-action="toggle">
+        <button class="status-btn ${paid?'paid':'pending'}" data-id="${m.id}" data-action="toggle" ${isAdmin() ? '' : 'disabled'} title="${isAdmin() ? '' : 'Only Admin can mark payments this way — use Add Payment instead'}">
           ${paid ? '✓ Paid' : 'Pending'}
         </button>
       </td>
@@ -878,7 +893,9 @@ function formatTs(iso){
 function populateHistoryMonthFilter(){
   const sel = document.getElementById('historyMonthFilter');
   const existing = sel.value;
-  const mks = Array.from(new Set(paymentLog.map(e=>e.mk))).sort().reverse();
+  const lock = lockedCategory();
+  const scopedLog = lock ? paymentLog.filter(e => e.cat === lock) : paymentLog;
+  const mks = Array.from(new Set(scopedLog.map(e=>e.mk))).sort().reverse();
   sel.innerHTML = '<option value="all">All Months</option>' +
     mks.map(mk => `<option value="${mk}">${monthLabelFromKey(mk)}</option>`).join('');
   if(mks.includes(existing)) sel.value = existing;
@@ -889,6 +906,10 @@ function renderHistory(){
   document.getElementById('historyMonthFilter').value = historyMonthFilter;
 
   let entries = paymentLog.slice();
+  const lock = lockedCategory();
+  if(lock){
+    entries = entries.filter(e => e.cat === lock);
+  }
   if(historyMonthFilter !== 'all'){
     entries = entries.filter(e => e.mk === historyMonthFilter);
   }
@@ -908,8 +929,8 @@ function renderHistory(){
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${formatTs(e.ts)}</td>
-      <td class="idx">${e.memberId}</td>
-      <td class="name-cell">${escapeHtml(e.name)}</td>
+      <td class="idx col-sl">${e.memberId}</td>
+      <td class="name-cell col-name">${escapeHtml(e.name)}</td>
       <td><span class="badge ${catClass}">${catLabel}</span></td>
       <td>${escapeHtml(e.receipt || '—')}</td>
       <td>${monthLabelFromKey(e.mk)}</td>
@@ -965,7 +986,7 @@ function renderGrid(){
     for(let mo = 1; mo <= 12; mo++){
       const mk = currentGridYear + '-' + String(mo).padStart(2,'0');
       const paid = isPaid(m.id, mk);
-      monthCells += `<td><span class="month-cell ${paid?'paid':'pending'}" data-id="${m.id}" data-mk="${mk}">${paid?'✓':''}</span></td>`;
+      monthCells += `<td><span class="month-cell ${paid?'paid':'pending'} ${isAdmin() ? '' : 'readonly'}" data-id="${m.id}" data-mk="${mk}">${paid?'✓':''}</span></td>`;
     }
     const pendingMonths = getPendingMonthsForYear(m.id, currentGridYear);
     const totalPending = pendingMonths.length * feeFor(m.cat);
@@ -975,8 +996,8 @@ function renderGrid(){
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td class="idx">${m.id}</td>
-      <td class="grid-name-cell">${escapeHtml(m.name)}</td>
+      <td class="idx col-sl">${m.id}</td>
+      <td class="grid-name-cell col-name">${escapeHtml(m.name)}</td>
       <td><span class="badge ${catClass}">${catLabel}</span></td>
       ${monthCells}
       <td><button class="wa-btn" data-id="${m.id}" data-action="grid-wa" ${waDisabled ? 'disabled' : ''} title="${waTitle}"><svg viewBox="0 0 24 24"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.87 9.87 0 0 0 12.04 2m0 1.67c2.2 0 4.27.86 5.82 2.42a8.2 8.2 0 0 1 2.41 5.82c0 4.54-3.7 8.23-8.24 8.23a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.18 8.18 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.25-8.23m-4.53 4.7c-.16 0-.42.06-.64.31s-.85.83-.85 2.02.87 2.35.99 2.51c.12.16 1.7 2.7 4.24 3.68 2.1.82 2.53.66 2.98.62.46-.04 1.48-.6 1.69-1.19s.21-1.09.15-1.19c-.06-.11-.23-.17-.48-.29s-1.48-.73-1.71-.81-.4-.12-.56.12-.64.81-.78.98-.29.19-.53.06a6.7 6.7 0 0 1-1.98-1.22 7.42 7.42 0 0 1-1.37-1.7c-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.44.12-.15.16-.25.24-.42.08-.16.04-.31-.02-.44s-.56-1.34-.76-1.84c-.2-.48-.4-.42-.56-.42h-.44"/></svg></button></td>
@@ -988,6 +1009,7 @@ function renderGrid(){
 document.getElementById('gridTbody').addEventListener('click', (e)=>{
   const cell = e.target.closest('.month-cell');
   if(cell){
+    if(!isAdmin()) return;
     const id = Number(cell.dataset.id);
     const mk = cell.dataset.mk;
     setPaid(id, mk, !isPaid(id, mk));
@@ -1053,6 +1075,7 @@ document.getElementById('tbody').addEventListener('click', (e) => {
   const mk = monthKey(currentDate);
 
   if(action === 'toggle'){
+    if(!isAdmin()) return;
     setPaid(id, mk, !isPaid(id, mk));
     render();
     renderHistory();
@@ -1562,8 +1585,13 @@ function rebuildPaymentsFromLog(){
   savePayments();
 }
 
+const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbwS-9ZmKudDDpitjQWIRD3oHQ2hkgjh6WJdrVrxAO0Poor9nzHuIUzglQ5Y79rsjXpGbA/exec';
+if(!localStorage.getItem(SHEET_URL_KEY)){
+  localStorage.setItem(SHEET_URL_KEY, DEFAULT_SHEET_URL);
+}
+
 function getSheetUrl(){
-  return localStorage.getItem(SHEET_URL_KEY) || '';
+  return localStorage.getItem(SHEET_URL_KEY) || DEFAULT_SHEET_URL;
 }
 function setSheetStatus(text){
   document.getElementById('sheetSyncStatus').textContent = text;
