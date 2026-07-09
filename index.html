@@ -1717,6 +1717,31 @@ document.getElementById('sheetRestoreBtn').addEventListener('click', async ()=>{
   }
 });
 
+// Silently pull the latest shared data from the Google Sheet whenever the app opens,
+// so every device (admin, Y login, N login) sees the same up-to-date Members/History.
+async function autoPullOnOpen(){
+  const url = getSheetUrl();
+  if(!url) return;
+  try{
+    const res = await fetch(url, { method: 'GET' });
+    const data = await res.json();
+    if(!data || !data.members) return;
+    members = data.members || [];
+    paymentLog = (data.paymentLog || []).map(e => (e.id ? e : Object.assign({}, e, {id: genLogId()})));
+    waTemplate = data.waTemplate || waTemplate || DEFAULT_TEMPLATE;
+    rebuildPaymentsFromLog();
+    saveMembers();
+    saveLog();
+    saveTemplate();
+    render();
+    renderGrid();
+    renderHistory();
+    showSyncToast('☁️ Loaded latest data', true);
+  } catch(err){
+    // fail quietly — keep whatever was already in this browser
+  }
+}
+
 // --- Login / Logout / Role UI ---
 function applyRoleUI(){
   document.getElementById('sessionRoleLabel').textContent = roleLabel(currentRole);
@@ -1767,7 +1792,9 @@ function attemptLogin(){
     render();
     renderGrid();
     renderHistory();
-    openPaymentModal(); // default to Add Payment page on open
+    autoPullOnOpen().then(()=>{
+      openPaymentModal(); // default to Add Payment page on open
+    });
   } else {
     document.getElementById('loginError').textContent = 'Incorrect passcode. Try again.';
   }
@@ -1813,7 +1840,9 @@ if(!currentRole){
   render();
   renderGrid();
   renderHistory();
-  openPaymentModal();
+  autoPullOnOpen().then(()=>{
+    openPaymentModal();
+  });
 }
 </script>
 </body>
